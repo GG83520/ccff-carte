@@ -776,6 +776,13 @@ vehicules.forEach(v => {
     + '<div class="popup-row"><span class="lbl">MAJ</span><span class="val">' + v.heure + '</span></div>'
     + '<div class="popup-row"><span class="lbl">Position</span><span class="val" style="font-size:11px;">' + v.lat.toFixed(4) + 'N ' + v.lng.toFixed(4) + 'E</span></div>'
     + '</div>';
+
+  var marker = L.marker([v.lat, v.lng], { icon: makeIcon(v.type, v.statut) })
+    .bindPopup(popup, { className: 'custom-popup', maxWidth: 280 })
+    .on('click', function(){ selectVehicle(v.id); });
+
+  markers[v.id] = { marker: marker, data: v };
+  clusterGroup.addLayer(marker);
 });
 
 clusterGroup.addTo(map);
