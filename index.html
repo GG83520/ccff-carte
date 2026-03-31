@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script src="dfci.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap');
 
@@ -417,6 +418,48 @@
   }
   .leaflet-control-zoom a:hover { background: #1a1f2e !important; }
 
+  /* Labels DFCI */
+  .dfci-label-2km {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-family: 'Barlow Condensed', monospace, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(255, 180, 20, 0.95);
+    text-shadow: 0 0 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .dfci-tooltip {
+    background: rgba(13,17,23,0.9) !important;
+    border: 1px solid #e8a020 !important;
+    color: #e8a020 !important;
+    font-family: 'Barlow Condensed', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 3px 8px !important;
+    border-radius: 3px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5) !important;
+  }
+  .dfci-tooltip::before { border-top-color: #e8a020 !important; }
+
+  .dfci-tooltip-10km {
+    background: rgba(13,17,23,0.85) !important;
+    border: 1px solid #e8a020 !important;
+    color: #e8a020 !important;
+    font-family: 'Barlow Condensed', sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    padding: 4px 10px !important;
+    border-radius: 4px !important;
+    letter-spacing: 1px !important;
+  }
+  .leaflet-tooltip-own { pointer-events: none !important; }
+
   /* Massifs overlay labels */
   .massif-label {
     background: transparent !important;
@@ -685,33 +728,80 @@ function toggleMassifs() {
 }
 
 // --- CARROYAGE DFCI ----------------------------------------------------------
-let dfciLayer = null;
-let dfciVisible = false;
+var dfciLayer   = null;
+var dfciVisible = false;
+
+function buildDFCILayer() {
+  var lg = L.layerGroup();
+  var zoom = map.getZoom();
+
+  if (zoom >= 12) {
+    // Mailles 2km avec codes DFCI
+    if (typeof DFCI_2KM !== 'undefined') {
+      L.geoJSON(DFCI_2KM, {
+        style: function() {
+          return { color:'#e8a020', weight:1.2, fillOpacity:0, opacity:0.75 };
+        },
+        onEachFeature: function(feature, layer) {
+          var code = feature.properties.c;
+          var cx = feature.properties.cx;
+          var cy = feature.properties.cy;
+          if (cx && cy) {
+            L.marker([cy, cx], {
+              icon: L.divIcon({
+                className: 'dfci-label-2km',
+                html: code,
+                iconSize: [60,14],
+                iconAnchor: [30,7]
+              }),
+              interactive: false,
+              keyboard: false
+            }).addTo(lg);
+          }
+          layer.bindTooltip(code, { permanent:false, direction:'center', className:'dfci-tooltip' });
+        }
+      }).addTo(lg);
+    }
+  } else {
+    // Mailles 10km avec codes
+    if (typeof DFCI_10KM !== 'undefined') {
+      L.geoJSON(DFCI_10KM, {
+        style: function() {
+          return { color:'#e8a020', weight:2.5, fillOpacity:0.05, fillColor:'#e8a020', opacity:0.9 };
+        },
+        onEachFeature: function(feature, layer) {
+          var code = feature.properties.c;
+          layer.bindTooltip(code, { permanent:true, direction:'center', className:'dfci-tooltip-10km' });
+        }
+      }).addTo(lg);
+    }
+  }
+  return lg;
+}
 
 function toggleDFCI() {
-  const btn = document.getElementById('btn-dfci');
+  var btn = document.getElementById('btn-dfci');
   if (dfciVisible) {
     if (dfciLayer) map.removeLayer(dfciLayer);
     dfciLayer = null;
     dfciVisible = false;
     btn.classList.remove('active');
   } else {
-    // Génère une grille DFCI approximative sur le Var (mailles ~2km)
-    dfciLayer = L.layerGroup();
-    const latMin=43.15, latMax=43.65, lngMin=5.65, lngMax=7.05;
-    const step = 0.018; // ~2km
-    for (let lat=latMin; lat<latMax; lat+=step) {
-      for (let lng=lngMin; lng<lngMax; lng+=step) {
-        L.rectangle([[lat,lng],[lat+step,lng+step]], {
-          color: '#c8a020', weight: 0.6, fillOpacity: 0, opacity: 0.5
-        }).addTo(dfciLayer);
-      }
-    }
+    dfciLayer = buildDFCILayer();
     dfciLayer.addTo(map);
     dfciVisible = true;
     btn.classList.add('active');
   }
 }
+
+// Reconstruire la couche DFCI au changement de zoom
+map.on('zoomend', function() {
+  if (dfciVisible) {
+    map.removeLayer(dfciLayer);
+    dfciLayer = buildDFCILayer();
+    dfciLayer.addTo(map);
+  }
+});
 
 // --- ICÔNES VÉHICULES --------------------------------------------------------
 function makeIcon(type, statut) {
