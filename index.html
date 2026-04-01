@@ -419,20 +419,6 @@
   .leaflet-control-zoom a:hover { background: #1a1f2e !important; }
 
   /* Labels DFCI */
-  .dfci-label-1km {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    font-family: 'Barlow Condensed', monospace, sans-serif;
-    font-size: 8px;
-    font-weight: 700;
-    color: rgba(255, 200, 50, 0.95);
-    text-shadow: 0 0 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
-    pointer-events: none;
-    white-space: nowrap;
-    text-align: center;
-  }
-
   .dfci-label-2km {
     background: transparent !important;
     border: none !important;
@@ -749,61 +735,8 @@ function buildDFCILayer() {
   var lg = L.layerGroup();
   var zoom = map.getZoom();
 
-  if (zoom >= 14) {
-    // Zoom max : carreaux 1km (subdivision des 2km en 5 zones)
-    if (typeof DFCI_2KM !== 'undefined' && DFCI_2KM !== null) {
-      DFCI_2KM.features.forEach(function(feature) {
-        var code = feature.properties.c;
-        var coords = feature.geometry.coordinates[0];
-        // Extraire les 4 coins (SW, SE, NE, NW, SW)
-        // GeoJSON: coords[0]=SW, [1]=SE, [2]=NE, [3]=NW, [4]=SW
-        var lons = coords.slice(0,4).map(function(c){return c[0];});
-        var lats = coords.slice(0,4).map(function(c){return c[1];});
-        var minLon = Math.min.apply(null,lons), maxLon = Math.max.apply(null,lons);
-        var minLat = Math.min.apply(null,lats), maxLat = Math.max.apply(null,lats);
-        var midLon = (minLon+maxLon)/2, midLat = (minLat+maxLat)/2;
-
-        // Grille 2km = bordure exterieure
-        L.polygon([[minLat,minLon],[minLat,maxLon],[maxLat,maxLon],[maxLat,minLon]], {
-          color:'#e8a020', weight:1.5, fillOpacity:0, opacity:0.9
-        }).addTo(lg);
-
-        // Lignes de subdivision (croix centrale)
-        L.polyline([[minLat,midLon],[maxLat,midLon]], {color:'#e8a020',weight:0.7,opacity:0.6,dashArray:'3,3'}).addTo(lg);
-        L.polyline([[midLat,minLon],[midLat,maxLon]], {color:'#e8a020',weight:0.7,opacity:0.6,dashArray:'3,3'}).addTo(lg);
-
-        // Zone .5 Centre : rectangle intérieur (moitié taille, centré)
-        var qLon = (maxLon-minLon)/4, qLat = (maxLat-minLat)/4;
-        L.polygon([
-          [midLat-qLat, midLon-qLon],
-          [midLat-qLat, midLon+qLon],
-          [midLat+qLat, midLon+qLon],
-          [midLat+qLat, midLon-qLon]
-        ], {color:'#e8a020', weight:0.8, fillOpacity:0.06, fillColor:'#e8a020', opacity:0.7, dashArray:'2,2'}).addTo(lg);
-
-        // Labels des 5 zones
-        var zones = [
-          {lat: (midLat+maxLat)/2, lon: (minLon+midLon)/2, suf:'.1'},  // Haut Gauche
-          {lat: (midLat+maxLat)/2, lon: (midLon+maxLon)/2, suf:'.2'},  // Haut Droit
-          {lat: (minLat+midLat)/2, lon: (minLon+midLon)/2, suf:'.3'},  // Bas Gauche
-          {lat: (minLat+midLat)/2, lon: (midLon+maxLon)/2, suf:'.4'},  // Bas Droit
-          {lat: midLat,            lon: midLon,             suf:'.5'},  // Centre
-        ];
-        zones.forEach(function(z) {
-          L.marker([z.lat, z.lon], {
-            icon: L.divIcon({
-              className: 'dfci-label-1km',
-              html: code + z.suf,
-              iconSize: [80,13], iconAnchor: [40,6]
-            }),
-            interactive: false, keyboard: false
-          }).addTo(lg);
-        });
-      });
-    }
-
-  } else if (zoom >= 12) {
-    // Zoom intermédiaire : mailles 2km avec codes
+  if (zoom >= 12) {
+    // Mailles 2km avec popup subdivision 1km au clic
     if (typeof DFCI_2KM !== 'undefined' && DFCI_2KM !== null) {
       L.geoJSON(DFCI_2KM, {
         style: function() {
@@ -811,8 +744,9 @@ function buildDFCILayer() {
         },
         onEachFeature: function(feature, layer) {
           var code = feature.properties.c;
-          var cx = feature.properties.cx;
-          var cy = feature.properties.cy;
+          var cx   = feature.properties.cx;
+          var cy   = feature.properties.cy;
+          // Label centré
           if (cx && cy) {
             L.marker([cy, cx], {
               icon: L.divIcon({
@@ -823,7 +757,32 @@ function buildDFCILayer() {
               interactive: false, keyboard: false
             }).addTo(lg);
           }
-          layer.bindTooltip(code, {permanent:false, direction:'center', className:'dfci-tooltip'});
+          // Popup subdivision 1km au clic
+          layer.on('click', function() {
+            var html =
+              '<div style="font-family:sans-serif;min-width:220px;">' +
+              '<div style="font-size:14px;font-weight:700;color:#e8a020;margin-bottom:8px;border-bottom:1px solid #2a3040;padding-bottom:6px;">' +
+              code + ' - Subdivision 1km</div>' +
+              '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
+              '<tr>' +
+              '<td style="padding:4px 6px;border:1px solid #2a3040;background:#1a2535;text-align:center;"><b style="color:#e8a020">' + code + '.1</b><br><span style="color:#8a9bb0">Haut Gauche</span></td>' +
+              '<td style="padding:4px 6px;border:1px solid #2a3040;background:#1a2535;text-align:center;"><b style="color:#e8a020">' + code + '.2</b><br><span style="color:#8a9bb0">Haut Droit</span></td>' +
+              '</tr>' +
+              '<tr>' +
+              '<td colspan="2" style="padding:4px 6px;border:1px solid #2a3040;background:#1e2a40;text-align:center;"><b style="color:#ffc832">' + code + '.5</b><br><span style="color:#8a9bb0">Centre</span></td>' +
+              '</tr>' +
+              '<tr>' +
+              '<td style="padding:4px 6px;border:1px solid #2a3040;background:#1a2535;text-align:center;"><b style="color:#e8a020">' + code + '.3</b><br><span style="color:#8a9bb0">Bas Gauche</span></td>' +
+              '<td style="padding:4px 6px;border:1px solid #2a3040;background:#1a2535;text-align:center;"><b style="color:#e8a020">' + code + '.4</b><br><span style="color:#8a9bb0">Bas Droit</span></td>' +
+              '</tr>' +
+              '</table>' +
+              '<div style="font-size:10px;color:#6a7a8a;margin-top:6px;font-style:italic;">Chaque zone = 1km x 1km</div>' +
+              '</div>';
+            layer.bindPopup(html, {
+              className: 'custom-popup',
+              maxWidth: 260
+            }).openPopup();
+          });
         }
       }).addTo(lg);
     }
@@ -844,7 +803,6 @@ function buildDFCILayer() {
   }
   return lg;
 }
-
 function toggleDFCI() {
   var btn = document.getElementById('btn-dfci');
   if (dfciVisible) {
