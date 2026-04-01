@@ -426,8 +426,8 @@
     font-family: 'Barlow Condensed', monospace, sans-serif;
     font-size: 9px;
     font-weight: 700;
-    color: rgba(255, 180, 20, 0.95);
-    text-shadow: 0 0 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
+    color: #ffffff;
+    text-shadow: 0 0 2px #000, 0 0 4px #000, 1px 1px 3px #000, -1px -1px 3px #000;
     letter-spacing: 0.5px;
     pointer-events: none;
     white-space: nowrap;
@@ -449,8 +449,8 @@
 
   .dfci-tooltip-10km {
     background: rgba(13,17,23,0.85) !important;
-    border: 1px solid #e8a020 !important;
-    color: #e8a020 !important;
+    border: 1px solid #fff !important;
+    color: #fff !important;
     font-family: 'Barlow Condensed', sans-serif !important;
     font-size: 15px !important;
     font-weight: 700 !important;
@@ -770,8 +770,8 @@ function buildDFCILayer() {
             var midLon   = (minLon + maxLon) / 2;
 
             // Zone centrale = 33% autour du centre
-            var marginLat = (maxLat - minLat) * 0.33;
-            var marginLon = (maxLon - minLon) * 0.33;
+            var marginLat = (maxLat - minLat) * 0.25;
+            var marginLon = (maxLon - minLon) * 0.25;
             var isCenter  = (clickLat > midLat - marginLat && clickLat < midLat + marginLat &&
                              clickLon > midLon - marginLon && clickLon < midLon + marginLon);
 
@@ -789,11 +789,11 @@ function buildDFCILayer() {
               label = 'Haut Droit';
               color = '#e8a020';
             } else if (clickLat < midLat && clickLon <= midLon) {
-              zone  = '.3';
+              zone  = '.4';
               label = 'Bas Gauche';
               color = '#e8a020';
             } else {
-              zone  = '.4';
+              zone  = '.3';
               label = 'Bas Droit';
               color = '#e8a020';
             }
