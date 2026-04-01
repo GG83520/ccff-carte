@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
-<script src="dfci.js"></script>
+<script src="dfci_v2.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap');
 
@@ -764,8 +764,8 @@ function buildDFCILayer() {
     }
   } else {
     // Mailles 10km avec codes
-    if (typeof DFCI_10KM !== 'undefined') {
-      L.geoJSON(DFCI_10KM, {
+    if (typeof DFCI_20KM !== 'undefined') {
+      L.geoJSON(DFCI_20KM, {
         style: function() {
           return { color:'#e8a020', weight:2.5, fillOpacity:0.05, fillColor:'#e8a020', opacity:0.9 };
         },
