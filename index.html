@@ -757,31 +757,58 @@ function buildDFCILayer() {
               interactive: false, keyboard: false
             }).addTo(lg);
           }
-          // Popup subdivision 1km au clic
-          layer.on('click', function() {
+          // Clic : detecter la zone 1km selon position exacte du clic
+          layer.on('click', function(e) {
+            var clickLat = e.latlng.lat;
+            var clickLon = e.latlng.lng;
+            var bounds   = layer.getBounds();
+            var minLat   = bounds.getSouth();
+            var maxLat   = bounds.getNorth();
+            var minLon   = bounds.getWest();
+            var maxLon   = bounds.getEast();
+            var midLat   = (minLat + maxLat) / 2;
+            var midLon   = (minLon + maxLon) / 2;
+
+            // Zone centrale = 33% autour du centre
+            var marginLat = (maxLat - minLat) * 0.33;
+            var marginLon = (maxLon - minLon) * 0.33;
+            var isCenter  = (clickLat > midLat - marginLat && clickLat < midLat + marginLat &&
+                             clickLon > midLon - marginLon && clickLon < midLon + marginLon);
+
+            var zone, label, color;
+            if (isCenter) {
+              zone  = '.5';
+              label = 'Centre';
+              color = '#ffc832';
+            } else if (clickLat >= midLat && clickLon <= midLon) {
+              zone  = '.1';
+              label = 'Haut Gauche';
+              color = '#e8a020';
+            } else if (clickLat >= midLat && clickLon > midLon) {
+              zone  = '.2';
+              label = 'Haut Droit';
+              color = '#e8a020';
+            } else if (clickLat < midLat && clickLon <= midLon) {
+              zone  = '.3';
+              label = 'Bas Gauche';
+              color = '#e8a020';
+            } else {
+              zone  = '.4';
+              label = 'Bas Droit';
+              color = '#e8a020';
+            }
+
+            var zoneCode = code + zone;
             var html =
-              '<div style="font-family:sans-serif;min-width:220px;">' +
-              '<div style="font-size:14px;font-weight:700;color:#e8a020;margin-bottom:8px;border-bottom:1px solid #2a3040;padding-bottom:6px;">' +
-              code + ' - Subdivision 1km</div>' +
-              '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
-              '<tr>' +
-              '<td style="padding:4px 6px;border:1px solid #2a3040;background:#1a2535;text-align:center;"><b style="color:#e8a020">' + code + '.1</b><br><span style="color:#8a9bb0">Haut Gauche</span></td>' +
-              '<td style="padding:4px 6px;border:1px solid #2a3040;background:#1a2535;text-align:center;"><b style="color:#e8a020">' + code + '.2</b><br><span style="color:#8a9bb0">Haut Droit</span></td>' +
-              '</tr>' +
-              '<tr>' +
-              '<td colspan="2" style="padding:4px 6px;border:1px solid #2a3040;background:#1e2a40;text-align:center;"><b style="color:#ffc832">' + code + '.5</b><br><span style="color:#8a9bb0">Centre</span></td>' +
-              '</tr>' +
-              '<tr>' +
-              '<td style="padding:4px 6px;border:1px solid #2a3040;background:#1a2535;text-align:center;"><b style="color:#e8a020">' + code + '.3</b><br><span style="color:#8a9bb0">Bas Gauche</span></td>' +
-              '<td style="padding:4px 6px;border:1px solid #2a3040;background:#1a2535;text-align:center;"><b style="color:#e8a020">' + code + '.4</b><br><span style="color:#8a9bb0">Bas Droit</span></td>' +
-              '</tr>' +
-              '</table>' +
-              '<div style="font-size:10px;color:#6a7a8a;margin-top:6px;font-style:italic;">Chaque zone = 1km x 1km</div>' +
+              '<div style="text-align:center;padding:4px 0;">' +
+              '<div style="font-size:22px;font-weight:700;color:' + color + ';letter-spacing:1px;margin-bottom:4px;">' + zoneCode + '</div>' +
+              '<div style="font-size:12px;color:#8a9bb0;margin-bottom:8px;">' + label + ' - 1km x 1km</div>' +
+              '<div style="font-size:10px;color:#4a5a6a;border-top:1px solid #2a3040;padding-top:6px;">' + code + ' (carreau 2km)</div>' +
               '</div>';
-            layer.bindPopup(html, {
-              className: 'custom-popup',
-              maxWidth: 260
-            }).openPopup();
+            L.popup({ className:'custom-popup', maxWidth:200 })
+              .setLatLng(e.latlng)
+              .setContent(html)
+              .openOn(map);
           });
         }
       }).addTo(lg);
