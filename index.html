@@ -987,9 +987,126 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 1000);
 
-// --- SIMULATION MOUVEMENT (léger) -------------------------------------------
-setInterval(() => {
-  vehicules.forEach(v => {
+// --- TRACCAR GPS TEMPS REEL -------------------------------------------------
+var TRACCAR_URL   = 'https://demo3.traccar.org';
+var TRACCAR_TOKEN = 'RzBFAiEAzcAWsjsHy53V77Fhz_sLF9NaLxnoYxuT21igqFtqLGsCID5yxLTD-6VP3EYC1jos4nu4M6ZzwBl_VlwSt1RzlI2LeyJpIjo3MTY5MDE5MzIzODEwNDUxNjU5LCJ1Ijo2NTAzLCJlIjoiMjAyNi0wNC0wOFQyMjowMDowMC4wMDArMDA6MDAifQ';
+var TRACCAR_DEVICES = {
+  75864832: { nom:'Smartphone_GG', type:'cmd', secteur:'Maures' }
+};
+var traccarActif = false;
+
+function fetchTraccar() {
+  fetch(TRACCAR_URL + '/api/positions', {
+    headers: {
+      'Authorization': 'Bearer ' + TRACCAR_TOKEN,
+      'Accept': 'application/json'
+    }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
+  .then(function(positions) {
+    if (!positions || positions.length === 0) return;
+    traccarActif = true;
+    // Mettre a jour le badge statut
+    var pill = document.querySelector('.status-pill');
+    if (pill) {
+      pill.style.background = '#1a3a1a';
+      pill.style.borderColor = '#2d7a2d';
+      pill.style.color = '#4caf50';
+      pill.innerHTML = 'GPS TEMPS REEL - demo3.traccar.org';
+    }
+    positions.forEach(function(pos) {
+      var devId  = pos.deviceId;
+      var lat    = pos.latitude;
+      var lon    = pos.longitude;
+      var speed  = Math.round((pos.speed || 0) * 1.852); // noeuds -> km/h
+      var heure  = new Date(pos.fixTime || pos.serverTime).toTimeString().slice(0,5);
+      var info   = TRACCAR_DEVICES[devId];
+      if (!info) {
+        // Device inconnu - l'ajouter dynamiquement
+        info = { nom:'Device-' + devId, type:'4x4', secteur:'Var' };
+        TRACCAR_DEVICES[devId] = info;
+      }
+      // Trouver le vehicule correspondant dans notre tableau
+      var found = false;
+      for (var i=0; i<vehicules.length; i++) {
+        if (vehicules[i].traccarId === devId) {
+          vehicules[i].lat     = lat;
+          vehicules[i].lng     = lon;
+          vehicules[i].vitesse = speed;
+          vehicules[i].heure   = heure;
+          vehicules[i].statut  = speed > 2 ? 'patrouille' : 'attente';
+          if (markers[vehicules[i].id]) {
+            markers[vehicules[i].id].marker.setLatLng([lat, lon]);
+          }
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        // Creer un nouveau vehicule pour ce device Traccar
+        var newId = 100 + devId % 1000;
+        var newVeh = {
+          id: newId, nom: info.nom, type: info.type,
+          secteur: info.secteur, lat: lat, lng: lon,
+          statut: speed > 2 ? 'patrouille' : 'attente',
+          vitesse: speed, equipe: 'GPS Live', heure: heure,
+          traccarId: devId
+        };
+        vehicules.push(newVeh);
+        // Creer le marqueur
+        var bgColor   = newVeh.type==='4x4' ? '#1a3a1a' : newVeh.type==='eau' ? '#1a2a3a' : '#3a1a1a';
+        var typeIcon  = newVeh.type==='4x4' ? '&#x1F699;' : newVeh.type==='eau' ? '&#x1F692;' : '&#x2B50;';
+        var typeLabel = newVeh.type==='4x4' ? '4x4 / VLTT' : newVeh.type==='eau' ? 'Porteur eau / CCF' : 'Commandement';
+        var popup = '<div class="popup-inner">'
+          + '<div class="popup-header">'
+          + '<div class="popup-icon" style="background:' + bgColor + '">' + typeIcon + '</div>'
+          + '<div><div class="popup-title">' + newVeh.nom + ' <span style="color:#4caf50;font-size:10px;">LIVE</span></div>'
+          + '<div class="popup-sub">' + typeLabel + ' - ' + newVeh.secteur + '</div></div>'
+          + '</div>'
+          + '<div class="popup-row"><span class="lbl">Statut</span><span class="val green">GPS temps reel</span></div>'
+          + '<div class="popup-row"><span class="lbl">Vitesse</span><span class="val">' + speed + ' km/h</span></div>'
+          + '<div class="popup-row"><span class="lbl">MAJ</span><span class="val">' + heure + '</span></div>'
+          + '</div>';
+        var mkr = L.marker([lat, lon], { icon: makeIcon(newVeh.type, newVeh.statut) })
+          .bindPopup(popup, { className:'custom-popup', maxWidth:280 })
+          .on('click', function(){ selectVehicle(newId); });
+        markers[newId] = { marker: mkr, data: newVeh };
+        clusterGroup.addLayer(mkr);
+        // Centrer la carte sur la premiere position reelle
+        map.setView([lat, lon], 13, { animate: true });
+      }
+    });
+    // Mettre a jour compteurs
+    updateStats();
+    renderList(document.getElementById('secteur-filter').value);
+  })
+  .catch(function(err) {
+    console.warn('Traccar fetch erreur:', err.message);
+  });
+}
+
+function updateStats() {
+  var actif   = vehicules.filter(function(v){return v.statut==='patrouille';}).length;
+  var attente = vehicules.filter(function(v){return v.statut==='attente';}).length;
+  var hs      = vehicules.filter(function(v){return v.statut==='hs';}).length;
+  document.getElementById('stat-total').textContent  = vehicules.length;
+  document.getElementById('stat-actif').textContent  = actif;
+  document.getElementById('stat-attente').textContent = attente;
+  document.getElementById('stat-hs').textContent     = hs;
+}
+
+// Demarrer le polling Traccar toutes les 30s
+fetchTraccar();
+setInterval(fetchTraccar, 30000);
+
+// --- SIMULATION MOUVEMENT (fallback si pas de Traccar) ----------------------
+setInterval(function() {
+  if (traccarActif) return; // Traccar actif = pas de simulation
+  vehicules.forEach(function(v) {
+    if (v.traccarId) return; // Ne pas simuler les vrais devices
     if (v.statut === 'patrouille' && v.vitesse > 0) {
       v.lat += (Math.random() - 0.5) * 0.004;
       v.lng += (Math.random() - 0.5) * 0.004;
