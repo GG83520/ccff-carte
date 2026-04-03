@@ -3,2016 +3,1122 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ROC D'AZUR 2026 — Saisie Bénévoles</title>
+<title>CCFF Var - Surveillance Feux de Forêt</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script src="dfci_official.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap');
 
-  :root {
-    --rouge: #C0392B;
-    --rouge-vif: #E74C3C;
-    --orange: #E67E22;
-    --dark: #1A1A2E;
-    --dark2: #16213E;
-    --dark3: #0F3460;
-    --gris: #2C3E50;
-    --gris2: #34495E;
-    --texte: #ECF0F1;
-    --texte2: #BDC3C7;
-    --vert: #27AE60;
-    --bleu: #2980B9;
-    --jaune: #F39C12;
-    --border: rgba(255,255,255,0.08);
-    --input-bg: rgba(255,255,255,0.06);
-    --input-focus: rgba(192,57,43,0.25);
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background: var(--dark);
-    color: var(--texte);
     font-family: 'Barlow', sans-serif;
-    font-size: 14px;
-    min-height: 100vh;
-  }
-
-  /* ========= HEADER ========= */
-  header {
-    background: linear-gradient(135deg, var(--dark2) 0%, var(--dark3) 100%);
-    border-bottom: 3px solid var(--rouge);
-    padding: 0;
-    position: sticky; top: 0; z-index: 100;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-  }
-  .header-inner {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 20px;
-    gap: 16px;
-  }
-  .header-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 22px; font-weight: 900; letter-spacing: 1px;
-    color: var(--texte);
-    white-space: nowrap;
-  }
-  .header-title span { color: var(--rouge-vif); }
-  .header-controls {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  }
-  .jour-selector {
-    display: flex; gap: 4px;
-  }
-  .btn-jour {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700; font-size: 13px; letter-spacing: 0.5px;
-    padding: 6px 12px; border-radius: 4px;
-    border: 1px solid var(--border);
-    background: var(--input-bg); color: var(--texte2);
-    cursor: pointer; transition: all 0.15s;
-  }
-  .btn-jour:hover { background: var(--gris2); color: var(--texte); }
-  .btn-jour.active {
-    background: var(--rouge); border-color: var(--rouge-vif);
-    color: #fff; box-shadow: 0 0 12px rgba(231,76,60,0.4);
-  }
-  .btn-action {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700; font-size: 13px; letter-spacing: 0.5px;
-    padding: 7px 14px; border-radius: 4px; border: none;
-    cursor: pointer; transition: all 0.15s; white-space: nowrap;
-  }
-  .btn-report { background: var(--bleu); color: #fff; }
-  .btn-report:hover { background: #3498DB; }
-  .btn-pdf { background: var(--rouge); color: #fff; }
-  .btn-pdf:hover { background: var(--rouge-vif); }
-  .btn-add-secteur { background: var(--vert); color: #fff; }
-  .btn-add-secteur:hover { background: #2ECC71; }
-  .badge-conflicts {
-    background: var(--orange); color: #fff;
-    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px;
-    padding: 4px 10px; border-radius: 20px; display: none;
-  }
-
-  /* ========= MAIN LAYOUT ========= */
-  main {
-    padding: 16px 20px;
-    max-width: 1600px; margin: 0 auto;
-  }
-
-  /* ========= DATE BAR ========= */
-  .date-bar {
-    background: linear-gradient(90deg, var(--dark3) 0%, var(--dark2) 100%);
-    border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px 18px;
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px;
-  }
-  .date-label {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 18px; font-weight: 700; letter-spacing: 2px;
-    color: var(--rouge-vif); text-transform: uppercase;
-  }
-  .stats-bar {
-    display: flex; gap: 20px;
-    font-size: 12px; color: var(--texte2);
-  }
-  .stat-item { display: flex; align-items: center; gap: 6px; }
-  .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .stat-dot.rouge { background: var(--rouge-vif); }
-  .stat-dot.vert { background: var(--vert); }
-  .stat-dot.jaune { background: var(--jaune); }
-  .stat-val { font-weight: 600; color: var(--texte); }
-
-  /* ========= SECTEUR BLOC ========= */
-  .secteur-bloc {
-    background: var(--dark2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 14px;
+    background: #0d1117;
+    color: #e0e0e0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
-    transition: box-shadow 0.2s;
   }
-  .secteur-bloc:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 
-  .secteur-header {
-    background: linear-gradient(90deg, rgba(192,57,43,0.2) 0%, rgba(15,52,96,0.4) 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 10px 16px;
-    display: flex; align-items: center; gap: 12px;
-    cursor: pointer; user-select: none;
+  /* -- HEADER -- */
+  #header {
+    background: linear-gradient(135deg, #1a1f2e 0%, #151922 100%);
+    border-bottom: 2px solid #e85d26;
+    padding: 0 16px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 1000;
   }
-  .secteur-num {
+
+  #header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .header-logo {
+    width: 34px;
+    height: 34px;
+    background: #e85d26;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  #header h1 {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 24px; font-weight: 900;
-    color: var(--rouge-vif); min-width: 32px;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+
+  #header h1 span {
+    color: #e85d26;
+  }
+
+  #header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  #clock {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 2px;
+  }
+
+  #date-display {
+    font-size: 11px;
+    color: #8a9bb0;
+    text-align: right;
+    line-height: 1.3;
+  }
+
+  .status-pill {
+    background: #1a3a1a;
+    border: 1px solid #2d7a2d;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #4caf50;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .status-pill::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    background: #4caf50;
+    border-radius: 50%;
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* -- MAIN LAYOUT -- */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* -- SIDEBAR -- */
+  #sidebar {
+    width: 280px;
+    background: #13181f;
+    border-right: 1px solid #1e2733;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .sidebar-section {
+    padding: 12px 14px;
+    border-bottom: 1px solid #1e2733;
+  }
+
+  .sidebar-section h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #e85d26;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* Stats bar */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-card {
+    background: #1a1f2e;
+    border: 1px solid #1e2733;
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .stat-card .val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
     line-height: 1;
+    color: #fff;
   }
-  .secteur-name-select {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 18px; font-weight: 700; letter-spacing: 1px;
-    background: transparent; border: none; color: var(--texte);
+
+  .stat-card .val.orange { color: #e85d26; }
+  .stat-card .val.green  { color: #4caf50; }
+  .stat-card .val.blue   { color: #42a5f5; }
+  .stat-card .val.red    { color: #ef5350; }
+
+  .stat-card .lbl {
+    font-size: 10px;
+    color: #6a7a8a;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Légende types */
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
     cursor: pointer;
-    padding: 2px 6px; border-radius: 4px;
+    border-radius: 4px;
     transition: background 0.15s;
-    -webkit-appearance: none;
-    background-image: none;
-  }
-  .secteur-name-select:hover { background: rgba(255,255,255,0.08); }
-  .secteur-name-select option { background: var(--dark2); font-size: 14px; font-weight: 400; }
-
-  .secteur-meta {
-    display: flex; align-items: center; gap: 16px; flex: 1;
-    flex-wrap: wrap;
-  }
-  .meta-field {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 12px; color: var(--texte2);
-  }
-  .meta-field label { white-space: nowrap; font-weight: 500; }
-  .meta-select, .meta-input {
-    background: #f0f0f0; border: 1px solid #bbb;
-    color: #111; border-radius: 4px; padding: 4px 8px;
-    font-family: 'Barlow', sans-serif; font-size: 12px;
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .meta-select:focus, .meta-input:focus {
-    outline: none; border-color: var(--rouge);
-    background: var(--input-focus);
-  }
-  .meta-select { width: 150px; }
-  .meta-input { width: 65px; }
-  .meta-tel {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px; color: var(--jaune); font-weight: 600;
-    min-width: 110px;
   }
 
-  .secteur-actions {
-    display: flex; align-items: center; gap: 8px; margin-left: auto;
+  .legend-item:hover { background: #1a2030; padding-left: 4px; }
+
+  .legend-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
   }
-  .btn-sm {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 12px; font-weight: 600;
-    padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border);
-    background: var(--input-bg); color: var(--texte2); cursor: pointer;
+
+  .legend-text { flex: 1; }
+  .legend-text .name { font-size: 13px; font-weight: 500; }
+  .legend-text .count { font-size: 11px; color: #6a7a8a; }
+
+  /* Filtre secteur */
+  #secteur-filter {
+    width: 100%;
+    background: #1a1f2e;
+    border: 1px solid #2a3040;
+    border-radius: 5px;
+    color: #e0e0e0;
+    padding: 6px 8px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  /* Liste véhicules */
+  #vehicle-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  #vehicle-list::-webkit-scrollbar { width: 4px; }
+  #vehicle-list::-webkit-scrollbar-thumb { background: #2a3040; border-radius: 2px; }
+
+  .vehicle-item {
+    padding: 8px 14px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
     transition: all 0.15s;
   }
-  .btn-sm:hover { background: var(--gris); color: var(--texte); }
-  .btn-sm.danger:hover { background: #922B21; border-color: var(--rouge); color: #fff; }
-  .btn-sm.success { background: rgba(39,174,96,0.15); border-color: var(--vert); color: var(--vert); }
-  .btn-sm.success:hover { background: var(--vert); color: #fff; }
-  .toggle-icon {
-    font-size: 16px; color: var(--texte2); transition: transform 0.2s;
-  }
-  .secteur-bloc.collapsed .toggle-icon { transform: rotate(-90deg); }
 
-  /* ========= TABLE PS ========= */
-  .table-wrapper {
-    overflow-x: auto;
-    padding: 0 0 4px 0;
+  .vehicle-item:hover {
+    background: #1a1f2e;
+    border-left-color: #e85d26;
   }
-  .secteur-bloc.collapsed .table-wrapper { display: none; }
 
-  table.ps-table {
-    width: 100%; border-collapse: collapse;
-    min-width: 900px;
+  .vehicle-item.selected {
+    background: #1a2535;
+    border-left-color: #e85d26;
   }
-  .ps-table thead th {
-    background: rgba(0,0,0,0.3);
+
+  .vi-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+  }
+
+  .vi-name {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
-    color: var(--texte2); text-transform: uppercase;
-    padding: 7px 10px; text-align: left;
-    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .vi-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-4x4   { background: #1a3a1a; color: #4caf50; border: 1px solid #2d7a2d; }
+  .badge-eau   { background: #1a2a3a; color: #42a5f5; border: 1px solid #1a5a8a; }
+  .badge-cmd   { background: #3a1a1a; color: #ef9a9a; border: 1px solid #8a2a2a; }
+
+  .vi-sub { font-size: 11px; color: #6a7a8a; }
+
+  .vi-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .dot-green  { width: 7px; height: 7px; border-radius: 50%; background: #4caf50; flex-shrink: 0; }
+  .dot-orange { width: 7px; height: 7px; border-radius: 50%; background: #ff9800; flex-shrink: 0; }
+  .dot-gray   { width: 7px; height: 7px; border-radius: 50%; background: #607d8b; flex-shrink: 0; }
+  .dot-red    { width: 7px; height: 7px; border-radius: 50%; background: #ef5350; flex-shrink: 0; }
+
+  /* -- MAP -- */
+  #map-container {
+    flex: 1;
+    position: relative;
+  }
+
+  #map { width: 100%; height: 100%; }
+
+  /* Contrôle fonds de carte */
+  #layer-control {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 900;
+    background: rgba(13,17,23,0.92);
+    border: 1px solid #2a3040;
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    backdrop-filter: blur(6px);
+  }
+
+  .layer-btn {
+    background: #1a1f2e;
+    border: 1px solid #2a3040;
+    border-radius: 5px;
+    color: #8a9bb0;
+    padding: 5px 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
     white-space: nowrap;
   }
-  .ps-table thead th.col-radios { text-align: center; }
-  .ps-table tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background 0.1s;
-  }
-  .ps-table tbody tr:hover { background: rgba(255,255,255,0.03); }
-  .ps-table tbody tr.ps-row-dirty { background: rgba(192,57,43,0.06); }
-  .ps-table td {
-    padding: 5px 6px; vertical-align: middle;
-  }
-  .ps-table td.col-num {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 15px; font-weight: 700; color: var(--texte2);
-    padding-left: 14px; min-width: 28px;
+
+  .layer-btn:hover { background: #1e2733; color: #fff; }
+  .layer-btn.active { background: #e85d26; border-color: #e85d26; color: #fff; }
+
+  /* Popup personnalisé */
+  .custom-popup .leaflet-popup-content-wrapper {
+    background: #13181f;
+    border: 1px solid #2a3040;
+    border-radius: 8px;
+    color: #e0e0e0;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    padding: 0;
   }
 
-  /* inputs dans table */
-  .ps-table input[type=text], .ps-table select {
-    width: 100%; background: var(--input-bg);
-    border: 1px solid transparent; border-radius: 4px;
-    color: var(--texte); padding: 5px 7px;
-    font-family: 'Barlow', sans-serif; font-size: 13px;
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .ps-table input[type=text]:focus, .ps-table select:focus {
-    outline: none; border-color: var(--rouge);
-    background: var(--input-focus);
-  }
-  .ps-table select option { background: var(--dark2); }
-  .ps-table input[type=text]::placeholder { color: rgba(255,255,255,0.2); font-style: italic; }
+  .custom-popup .leaflet-popup-tip { background: #13181f; }
+  .custom-popup .leaflet-popup-content { margin: 0; }
 
-  .col-ps { min-width: 200px; }
-  .col-hmep { width: 80px; }
-  .col-veh { width: 110px; }
-  .col-benv { min-width: 130px; }
-  .col-radio { width: 52px; text-align: center; }
-  .col-obs { min-width: 140px; }
-  .col-del { width: 32px; text-align: center; }
+  .popup-inner { padding: 14px 16px; min-width: 220px; }
 
-  /* radio number input */
-  .radio-num {
-    width: 44px; height: 30px; text-align: center;
-    background: var(--input-bg); border: 1px solid transparent;
-    border-radius: 4px; color: var(--texte);
-    font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700;
-    cursor: pointer; -moz-appearance: textfield;
-    transition: border-color 0.15s, background 0.15s;
-    display: block; margin: 0 auto;
-  }
-  .radio-num::-webkit-inner-spin-button,
-  .radio-num::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  .radio-num:focus { outline: none; border-color: var(--rouge); background: var(--input-focus); }
-  .radio-num.has-value { color: var(--vert); border-color: rgba(39,174,96,0.4); }
-  .radio-num.com.has-value { color: #7EC8E3; border-color: rgba(41,128,185,0.4); }
-  .radio-num.crs.has-value { color: #F1948A; border-color: rgba(192,57,43,0.4); }
-  .radio-num.cmv.has-value { color: #82E0AA; border-color: rgba(39,174,96,0.4); }
-
-  /* row-ajouter */
-  .btn-add-ps {
-    width: 100%; padding: 7px; font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
-    background: transparent; border: 1px dashed rgba(255,255,255,0.12);
-    color: var(--texte2); cursor: pointer; transition: all 0.15s;
-    border-radius: 0 0 6px 6px;
-  }
-  .btn-add-ps:hover {
-    background: rgba(39,174,96,0.1); border-color: var(--vert); color: var(--vert);
+  .popup-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #1e2733;
   }
 
-  .btn-del-row {
-    background: none; border: none; color: rgba(255,255,255,0.15);
-    cursor: pointer; font-size: 15px; padding: 4px; border-radius: 3px;
-    transition: all 0.15s; display: block; margin: 0 auto;
+  .popup-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
   }
-  .btn-del-row:hover { background: rgba(192,57,43,0.3); color: var(--rouge-vif); }
 
-  /* conflict highlight */
-  .conflict-cell input, .conflict-cell select {
-    border-color: var(--orange) !important;
-    background: rgba(230,126,34,0.12) !important;
-  }
-  .conflict-veh input, .conflict-veh select {
-    border-color: #E74C3C !important;
-    background: rgba(192,57,43,0.18) !important;
-  }
-  .conflict-badge {
-    font-size: 10px; background: var(--orange); color: #fff;
-    border-radius: 3px; padding: 1px 4px; margin-left: 4px;
-    vertical-align: middle; display: none;
-  }
-  .conflict-badge.visible { display: inline; }
+  .popup-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; }
+  .popup-sub   { font-size: 11px; color: #6a7a8a; }
 
-  /* ========= RADIO STAT PILLS (date-bar) ========= */
-  .radio-stat-pill {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
-    padding: 2px 8px; border-radius: 4px; border: 1px solid;
-    transition: all 0.2s;
+  .popup-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    font-size: 12px;
   }
-  .radio-stat-pill.com { background: rgba(41,128,185,0.15); border-color: rgba(88,166,255,0.3); color: #7EC8E3; }
-  .radio-stat-pill.crs { background: rgba(192,57,43,0.15); border-color: rgba(231,76,60,0.3); color: #F1948A; }
-  .radio-stat-pill.cmv { background: rgba(39,174,96,0.15); border-color: rgba(63,185,80,0.3); color: #82E0AA; }
-  .radio-stat-pill.over { background: rgba(231,76,60,0.3); border-color: var(--rouge-vif); color: #fff; animation: pulse-warn 1s infinite; }
-  @keyframes pulse-warn { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
 
-  /* ========= ALERTS BAR ========= */
-  #alertsBar { margin: 0 0 10px 0; display: flex; flex-direction: column; gap: 5px; }
-  .alert-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 14px; border-radius: 7px; font-size: 13px;
-    border: 1px solid;
-  }
-  .alert-item.radio-over {
-    background: rgba(192,57,43,0.12); border-color: rgba(231,76,60,0.4); color: #F1948A;
-  }
-  .alert-item.veh-double {
-    background: rgba(230,126,34,0.12); border-color: rgba(230,126,34,0.4); color: var(--orange);
-  }
-  .alert-icon { font-size: 15px; flex-shrink: 0; }
-  .alert-text strong { color: #fff; }
+  .popup-row .lbl { color: #6a7a8a; }
+  .popup-row .val { font-weight: 500; color: #e0e0e0; }
+  .popup-row .val.green { color: #4caf50; }
+  .popup-row .val.orange { color: #ff9800; }
 
-  /* ========= COMMENTAIRES SECTEUR ========= */
-  .secteur-commentaires {
-    border-top: 1px solid var(--border);
-    background: rgba(0,0,0,0.15);
-    padding: 10px 16px 12px;
-  }
-  .secteur-bloc.collapsed .secteur-commentaires { display: none; }
-  .commentaires-label {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
-    color: var(--texte2); text-transform: uppercase;
-    margin-bottom: 7px;
-  }
-  .commentaires-grid {
-    display: flex; flex-direction: column; gap: 5px;
-  }
-  .comment-row {
-    display: flex; align-items: center; gap: 8px;
-  }
-  .comment-num {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 12px; color: var(--texte2); min-width: 18px; text-align: right;
-  }
-  .comment-input {
-    flex: 1; background: var(--input-bg); border: 1px solid transparent;
-    border-radius: 4px; color: var(--texte); padding: 5px 10px;
-    font-family: 'Barlow', sans-serif; font-size: 13px;
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .comment-input:focus {
-    outline: none; border-color: var(--jaune);
-    background: rgba(243,156,18,0.08);
-  }
-  .comment-input::placeholder { color: rgba(255,255,255,0.18); font-style: italic; }
-  .comment-input.has-value { border-color: rgba(243,156,18,0.3); color: var(--jaune); }
-
-  /* ========= PANEL REPORT ========= */
-  .report-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    z-index: 200; display: none; align-items: center; justify-content: center;
-    padding: 20px;
-  }
-  .report-overlay.active { display: flex; }
-  .report-panel {
-    background: var(--dark2); border: 1px solid var(--border);
-    border-radius: 12px; width: 100%; max-width: 820px;
-    max-height: 90vh; overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-  }
-  .report-header {
-    background: linear-gradient(90deg, var(--rouge) 0%, var(--dark3) 100%);
-    padding: 16px 20px; border-radius: 12px 12px 0 0;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .report-header h2 {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 20px; font-weight: 900; letter-spacing: 1.5px;
-  }
-  .btn-close {
-    background: rgba(0,0,0,0.3); border: none; color: #fff;
-    border-radius: 50%; width: 32px; height: 32px; font-size: 18px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-  }
-  .report-body { padding: 20px; }
-  .report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .report-table th {
-    background: rgba(0,0,0,0.3); padding: 8px 10px;
-    font-family: 'Barlow Condensed', sans-serif; font-size: 11px;
-    letter-spacing: 0.8px; text-transform: uppercase; color: var(--texte2);
-    text-align: left; border-bottom: 1px solid var(--border);
-  }
-  .report-table td {
-    padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,0.04);
-    vertical-align: top;
-  }
-  .report-table tr:hover td { background: rgba(255,255,255,0.03); }
-  .radio-pill {
-    display: inline-block; font-family: 'Barlow Condensed', sans-serif;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
-    padding: 2px 6px; border-radius: 3px; margin: 1px;
-  }
-  .radio-pill.com { background: rgba(41,128,185,0.3); color: #7EC8E3; }
-  .radio-pill.crs { background: rgba(192,57,43,0.3); color: #F1948A; }
-  .radio-pill.cmv { background: rgba(39,174,96,0.3); color: #82E0AA; }
-  .btn-print {
-    background: var(--rouge); color: #fff;
-    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
-    font-size: 14px; padding: 10px 24px; border: none;
-    border-radius: 6px; cursor: pointer; margin-top: 16px;
-    transition: background 0.15s;
-  }
-  .btn-print:hover { background: var(--rouge-vif); }
-
-  /* ========= TOAST ========= */
-  .toast {
-    position: fixed; bottom: 24px; right: 24px;
-    background: var(--vert); color: #fff;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 15px; font-weight: 700; letter-spacing: 0.5px;
-    padding: 12px 20px; border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    transform: translateY(80px); opacity: 0;
-    transition: all 0.3s; z-index: 300;
-  }
-  .toast.show { transform: translateY(0); opacity: 1; }
-  .toast.warn { background: var(--orange); }
-  .toast.err { background: var(--rouge); }
-
-  .col-course { min-width: 130px; }
-  .course-pill {
-    display: inline-block;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
-    padding: 2px 7px; border-radius: 3px; margin: 1px 2px;
+  /* Alerte zone */
+  #alert-bar {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 900;
+    background: rgba(232,93,38,0.15);
+    border: 1px solid #e85d26;
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #e85d26;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(6px);
     white-space: nowrap;
   }
-  .course-none { color: rgba(255,255,255,0.18); font-size: 11px; font-style: italic; }
 
-  /* ========= COURSES PANEL ========= */
-  .courses-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    z-index: 200; display: none; align-items: center; justify-content: center;
-    padding: 20px;
+  /* Leaflet overrides */
+  .leaflet-control-zoom a {
+    background: #13181f !important;
+    color: #e0e0e0 !important;
+    border-color: #2a3040 !important;
   }
-  .courses-overlay.active { display: flex; }
-  .courses-panel {
-    background: var(--dark2); border: 1px solid var(--border);
-    border-radius: 12px; width: 100%; max-width: 680px;
-    max-height: 85vh; overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  .leaflet-control-zoom a:hover { background: #1a1f2e !important; }
+
+  /* Labels DFCI */
+  .dfci-label-2km {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-family: 'Barlow Condensed', monospace, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 0 2px #000, 0 0 4px #000, 1px 1px 3px #000, -1px -1px 3px #000;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    white-space: nowrap;
+    text-align: center;
   }
-  .courses-panel-header {
-    background: linear-gradient(90deg, #6C3483 0%, var(--dark3) 100%);
-    padding: 14px 20px; border-radius: 12px 12px 0 0;
-    display: flex; align-items: center; justify-content: space-between;
+
+  .dfci-tooltip {
+    background: rgba(13,17,23,0.9) !important;
+    border: 1px solid #e8a020 !important;
+    color: #e8a020 !important;
+    font-family: 'Barlow Condensed', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 3px 8px !important;
+    border-radius: 3px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5) !important;
   }
-  .courses-panel-header h2 {
+  .dfci-tooltip::before { border-top-color: #e8a020 !important; }
+
+  .dfci-tooltip-10km {
+    background: rgba(13,17,23,0.85) !important;
+    border: 1px solid #fff !important;
+    color: #fff !important;
+    font-family: 'Barlow Condensed', sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    padding: 4px 10px !important;
+    border-radius: 4px !important;
+    letter-spacing: 1px !important;
+  }
+  .leaflet-tooltip-own { pointer-events: none !important; }
+
+  /* Massifs overlay labels */
+  .massif-label {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 18px; font-weight: 900; letter-spacing: 1.5px;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,200,100,0.85);
+    letter-spacing: 1.5px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.7);
+    text-transform: uppercase;
+    pointer-events: none;
   }
-  .courses-panel-body { padding: 16px 20px; }
-  .course-card {
-    border: 1px solid var(--border); border-radius: 8px;
-    margin-bottom: 14px; overflow: hidden;
-  }
-  .course-card-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 14px;
-    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 17px;
-    letter-spacing: 0.8px;
-  }
-  .course-jours {
-    display: flex; gap: 6px;
-  }
-  .course-jour-badge {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 12px; font-weight: 700;
-    padding: 3px 8px; border-radius: 4px;
-    background: rgba(255,255,255,0.15); color: var(--texte);
-  }
-  .course-jour-badge.active-jour {
-    background: var(--rouge); color: #fff;
-    box-shadow: 0 0 8px rgba(231,76,60,0.4);
-  }
-  .course-ps-list {
-    padding: 8px 14px 12px;
-    display: flex; flex-wrap: wrap; gap: 6px;
-  }
-  .course-ps-item {
-    font-size: 12px; background: var(--input-bg);
-    border: 1px solid var(--border); border-radius: 4px;
-    padding: 3px 8px; color: var(--texte2);
-  }
-  .course-ps-item.assigned {
-    border-color: var(--vert); color: var(--vert);
-    background: rgba(39,174,96,0.1);
-  }
-  .course-ps-item.assigned::before { content: '✓ '; }
-  .course-summary {
-    padding: 6px 14px 10px;
-    font-size: 12px; color: var(--texte2);
-    border-top: 1px solid var(--border);
-  }
-  .course-summary strong { color: var(--texte); }
-  @media print {
-    /* Par défaut : tout masqué sauf contenu normal */
-    header, .date-bar, .stats-bar, .secteur-actions,
-    .btn-add-ps, .btn-del-row, .courses-overlay { display: none !important; }
-    #reportOverlay, #ficheSectOverlay { display: none !important; }
-    body { background: #fff; color: #000; }
-    .secteur-header { background: #eee; }
-
-    /* ── Mode impression Fiche Secteur ── */
-    body.print-fiche-sect header,
-    body.print-fiche-sect main,
-    body.print-fiche-sect #reportOverlay,
-    body.print-fiche-sect .courses-overlay { display: none !important; }
-    body.print-fiche-sect #ficheSectOverlay {
-      display: block !important; position: static !important;
-      padding: 0; background: none !important; overflow: visible !important;
-    }
-    body.print-fiche-sect .fiche-sect-panel { box-shadow: none; border-radius: 0; max-width: 100%; }
-    body.print-fiche-sect .fiche-sect-controls,
-    body.print-fiche-sect .btn-fiche-print,
-    body.print-fiche-sect .btn-close { display: none !important; }
-    body.print-fiche-sect .fs-section-header {
-      background: #2C3E50 !important; color: #fff !important;
-      -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
-    body.print-fiche-sect .fs-table th {
-      background: #2C3E50 !important; color: #fff !important;
-      -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
-
-    /* ── Mode impression Report Jx ── */
-    body.print-report header,
-    body.print-report main,
-    body.print-report #ficheSectOverlay,
-    body.print-report .courses-overlay { display: none !important; }
-    body.print-report #reportOverlay {
-      display: block !important; position: static !important;
-      padding: 0; background: none !important; overflow: visible !important;
-    }
-    body.print-report .fiche-sect-panel { box-shadow: none; border-radius: 0; max-width: 100%; }
-    body.print-report .fiche-sect-controls,
-    body.print-report .btn-fiche-print,
-    body.print-report .btn-close { display: none !important; }
-    body.print-report .fs-section-header {
-      background: #2C3E50 !important; color: #fff !important;
-      -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
-    body.print-report .fs-table th {
-      background: #2C3E50 !important; color: #fff !important;
-      -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
-  }
-
-  /* ========= FICHE SECTEUR ========= */
-  .fiche-sect-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-    z-index: 200; display: none; align-items: flex-start; justify-content: center;
-    padding: 20px; overflow-y: auto;
-  }
-  .fiche-sect-overlay.active { display: flex; }
-  .fiche-sect-panel {
-    background: #fff; color: #111;
-    border-radius: 10px; width: 100%; max-width: 900px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-    font-family: Arial, sans-serif; font-size: 13px;
-    margin: auto;
-  }
-  .fiche-sect-controls {
-    background: var(--dark2); border-radius: 10px 10px 0 0;
-    padding: 12px 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  }
-  .fiche-sect-controls label {
-    font-family: 'Barlow Condensed', sans-serif; font-size: 12px;
-    font-weight: 700; letter-spacing: 1px; color: var(--texte2); text-transform: uppercase;
-  }
-  .fiche-sect-controls select {
-    background: #f0f0f0; border: 1px solid #bbb; color: #111;
-    border-radius: 4px; padding: 5px 10px;
-    font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600;
-  }
-  .fiche-sect-body { padding: 22px 26px; }
-  .fs-titre { font-size: 22px; font-weight: 900; text-transform: uppercase; color: #C0392B; letter-spacing: 2px; }
-  .fs-sous-titre { font-size: 13px; color: #555; margin-bottom: 16px; }
-  .fs-section { margin-bottom: 14px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; }
-  .fs-section-header { background: #1A3A5C; color: #fff; padding: 7px 14px; font-weight: 700; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
-  .fs-section-body { padding: 10px 14px; }
-  .fs-info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 4px; }
-  .fs-info-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-  .fs-info-val { font-size: 15px; font-weight: 700; color: #111; }
-  .fs-info-val.rouge { color: #C0392B; }
-  .fs-info-val.vert  { color: #1E8449; }
-  .fs-info-val.bleu  { color: #1A5276; }
-  .fs-comm-list { list-style: none; padding: 0; margin: 0; }
-  .fs-comm-list li { padding: 4px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
-  .fs-comm-list li:last-child { border-bottom: none; }
-  .fs-comm-list li::before { content: '▸ '; color: #E67E22; font-weight: 700; }
-  .fs-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 4px; }
-  .fs-table th { background: #2C3E50; color: #fff; padding: 5px 7px; text-align: left; font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; }
-  .fs-table td { padding: 5px 7px; border-bottom: 1px solid #eee; vertical-align: top; }
-  .fs-table tr:nth-child(even) td { background: #F8F9FA; }
-  .fs-radio-pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin: 1px; }
-  .fs-radio-pill.com { background: #D6EAF8; color: #1A5276; }
-  .fs-radio-pill.crs { background: #FADBD8; color: #922B21; }
-  .fs-radio-pill.cmv { background: #D5F5E3; color: #1E8449; }
-  .fs-course-tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 3px; margin: 1px; background: #E8DAEF; color: #6C3483; }
-  .fs-empty { color: #aaa; font-style: italic; text-align: center; padding: 20px; }
-  .btn-fiche-print { background: #C0392B; color: #fff; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; padding: 10px 24px; border: none; border-radius: 6px; cursor: pointer; margin-top: 16px; }
-  .btn-fiche-print:hover { background: #E74C3C; }
 </style>
 </head>
 <body>
 
 <!-- HEADER -->
-<header>
-  <div class="header-inner">
-    <div class="header-title">🚵 ROC D'AZUR <span>2026</span> — Saisie Bénévoles</div>
-    <div class="header-controls">
-      <div class="jour-selector" id="jourSelector"></div>
-      <span class="badge-conflicts" id="badgeConflicts">⚠ Conflits</span>
-      <button class="btn-action btn-add-secteur" onclick="addSecteur()">+ Secteur</button>
-      <button class="btn-action" style="background:#6C3483;color:#fff" onclick="openCourses()">🏁 Courses</button>
-      <button class="btn-action" style="background:#E67E22;color:#fff" onclick="openFicheSecteur()">📄 Fiche Secteur</button>
-      <button class="btn-action btn-report" onclick="openReport()">📋 Report Jx</button>
-      <button class="btn-action btn-pdf" onclick="saveDraft()">💾 Sauvegarder</button>
+<div id="header">
+  <div id="header-left">
+    <div class="header-logo">🔥</div>
+    <h1>CCFF VAR - <span>SURVEILLANCE FEUX DE FORÊT</span></h1>
+  </div>
+  <div id="header-right">
+    <div class="status-pill">PROTOTYPE • DONNÉES SIMULÉES</div>
+    <div>
+      <div id="clock">--:--:--</div>
+      <div id="date-display">Chargement...</div>
     </div>
   </div>
-</header>
+</div>
 
-<main>
-  <div class="date-bar">
-    <div class="date-label" id="dateLabel">MERCREDI 08/10/2026 — J1</div>
-    <div class="stats-bar">
-      <div class="stat-item"><div class="stat-dot rouge"></div><span>PS actifs : <strong class="stat-val" id="statPS">0</strong></span></div>
-      <div class="stat-item"><div class="stat-dot vert"></div><span>Bénévoles : <strong class="stat-val" id="statBenv">0</strong></span></div>
-      <div class="stat-item"><div class="stat-dot jaune"></div><span>Véhicules : <strong class="stat-val" id="statVeh">0</strong></span></div>
-      <div class="stat-item" style="margin-left:12px;gap:8px">
-        <span style="font-size:11px;color:var(--texte2)">Radios :</span>
-        <span id="statCOM" class="radio-stat-pill com">COM 0/20</span>
-        <span id="statCRS" class="radio-stat-pill crs">CRS 0/15</span>
-        <span id="statCMV" class="radio-stat-pill cmv">CMV 0/10</span>
+<!-- MAIN -->
+<div id="main">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+
+    <!-- Stats -->
+    <div class="sidebar-section">
+      <h3>État de la flotte</h3>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="val orange" id="stat-total">20</div>
+          <div class="lbl">Véhicules</div>
+        </div>
+        <div class="stat-card">
+          <div class="val green" id="stat-actif">14</div>
+          <div class="lbl">En patrouille</div>
+        </div>
+        <div class="stat-card">
+          <div class="val blue" id="stat-attente">4</div>
+          <div class="lbl">En attente</div>
+        </div>
+        <div class="stat-card">
+          <div class="val red" id="stat-hs">2</div>
+          <div class="lbl">Hors service</div>
+        </div>
       </div>
     </div>
+
+    <!-- Légende types -->
+    <div class="sidebar-section">
+      <h3>Types de véhicules</h3>
+      <div class="legend-item">
+        <div class="legend-icon" style="background:#1a3a1a;">🚙</div>
+        <div class="legend-text">
+          <div class="name" style="color:#4caf50;">4x4 / VLTT</div>
+          <div class="count">12 véhicules</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-icon" style="background:#1a2a3a;">🚒</div>
+        <div class="legend-text">
+          <div class="name" style="color:#42a5f5;">Porteur d'eau / CCF</div>
+          <div class="count">6 véhicules</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-icon" style="background:#3a1a1a;">\u2B50</div>
+        <div class="legend-text">
+          <div class="name" style="color:#ef9a9a;">Commandement</div>
+          <div class="count">2 véhicules</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtre secteur -->
+    <div class="sidebar-section">
+      <h3>Filtrer par secteur</h3>
+      <select id="secteur-filter" onchange="filterBySecteur(this.value)">
+        <option value="tous">- Tous les secteurs -</option>
+        <option value="Maures">Massif des Maures</option>
+        <option value="Esterel">Massif de l'Estérel</option>
+        <option value="Sainte-Baume">Sainte-Baume</option>
+        <option value="Bessillon">Bessillon</option>
+        <option value="Plaine">Plaine / Littoral</option>
+      </select>
+    </div>
+
+    <!-- Liste véhicules -->
+    <div id="vehicle-list"></div>
+
   </div>
 
-  <!-- Barre d'alertes A5/A6 -->
-  <div id="alertsBar"></div>
+  <!-- MAP -->
+  <div id="map-container">
+    <div id="map"></div>
 
-  <div id="secteursContainer"></div>
-</main>
-
-<!-- REPORT OVERLAY — même style que Fiche Secteur -->
-<div class="fiche-sect-overlay" id="reportOverlay">
-  <div class="fiche-sect-panel">
-    <div class="fiche-sect-controls">
-      <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#fff;letter-spacing:1px" id="reportTitle">ROC D'AZUR 2026</span>
-      <button class="btn-fiche-print btn-print-report" onclick="imprimerReport()">🖨 Imprimer</button>
-      <button class="btn-close" onclick="closeReport()" style="margin-left:auto">✕</button>
+    <!-- Sélecteur fonds de carte -->
+    <div id="layer-control">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:#6a7a8a;letter-spacing:1px;padding:2px 4px 6px;">FOND DE CARTE</div>
+      <button class="layer-btn active" onclick="setLayer('osm')">🗺 OpenStreetMap</button>
+      <button class="layer-btn" onclick="setLayer('osm-topo')">🏔 Topo (OpenTopoMap)</button>
+      <button class="layer-btn" onclick="setLayer('satellite')">🛰 Satellite Esri</button>
+      <button class="layer-btn" onclick="setLayer('esri-topo')">🗾 Topo Esri</button>
+      <div style="border-top:1px solid #2a3040;margin:4px 0;"></div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:#6a7a8a;letter-spacing:1px;padding:2px 4px 4px;">COUCHES</div>
+      <button class="layer-btn" id="btn-massifs" onclick="toggleMassifs()">🌲 Massifs forestiers</button>
+      <button class="layer-btn" id="btn-dfci" onclick="toggleDFCI()">📐 Carroyage DFCI</button>
     </div>
-    <div class="fiche-sect-body" id="reportBody"></div>
+
+    <div id="alert-bar">⚡ PROTOTYPE - Positions simulées - Rafraîchissement : 30s</div>
   </div>
-</div>
 
-<div class="toast" id="toast"></div>
-
-<!-- COURSES OVERLAY -->
-<div class="courses-overlay" id="coursesOverlay">
-  <div class="courses-panel">
-    <div class="courses-panel-header">
-      <h2>🏁 COURSES — PS PAR ÉPREUVE</h2>
-      <button class="btn-close" onclick="closeCourses()">✕</button>
-    </div>
-    <div class="courses-panel-body" id="coursesPanelBody"></div>
-  </div>
-</div>
-
-<!-- FICHE SECTEUR OVERLAY -->
-<div class="fiche-sect-overlay" id="ficheSectOverlay">
-  <div class="fiche-sect-panel">
-    <div class="fiche-sect-controls">
-      <label>Secteur</label>
-      <select id="fsSecteurSelect" onchange="renderFicheSecteur()"></select>
-      <label style="margin-left:8px">Jour</label>
-      <select id="fsJourSelect" onchange="renderFicheSecteur()"></select>
-      <button class="btn-fiche-print" onclick="imprimerFicheSecteur()">🖨 Imprimer</button>
-      <button class="btn-close" onclick="closeFicheSecteur()" style="margin-left:auto">✕</button>
-    </div>
-    <div class="fiche-sect-body" id="ficheSectBody">
-      <div class="fs-empty">Sélectionner un secteur et un jour</div>
-    </div>
-  </div>
 </div>
 
 <script>
-// ========================================================
-// DATA — Référentiels (issus de RocAzur_2026_v20.xlsm)
-// ========================================================
-const JOURS = [
-  { id: 'J1', label: 'J1', date: 'MERCREDI 07/10/2026' },
-  { id: 'J2', label: 'J2', date: 'JEUDI 08/10/2026' },
-  { id: 'J3', label: 'J3', date: 'VENDREDI 09/10/2026' },
-  { id: 'J4', label: 'J4', date: 'SAMEDI 10/10/2026' },
-  { id: 'J5', label: 'J5', date: 'DIMANCHE 11/10/2026' },
+// --- DONNÉES VÉHICULES SIMULÉS -----------------------------------------------
+const vehicules = [
+  // 4x4 / VLTT (vert)
+  { id:1,  nom:'VL-83-001', type:'4x4',  secteur:'Maures',      lat:43.330, lng:6.420, statut:'patrouille', vitesse:38, equipe:'Bernard / Roux',      heure:'14:18' },
+  { id:2,  nom:'VL-83-002', type:'4x4',  secteur:'Maures',      lat:43.288, lng:6.389, statut:'patrouille', vitesse:22, equipe:'Martin / Dupont',     heure:'14:21' },
+  { id:3,  nom:'VL-83-003', type:'4x4',  secteur:'Maures',      lat:43.350, lng:6.510, statut:'attente',    vitesse:0,  equipe:'Fabre / Girard',      heure:'14:15' },
+  { id:4,  nom:'VL-83-004', type:'4x4',  secteur:'Esterel',     lat:43.470, lng:6.850, statut:'patrouille', vitesse:45, equipe:'Blanc / Morel',       heure:'14:22' },
+  { id:5,  nom:'VL-83-005', type:'4x4',  secteur:'Esterel',     lat:43.515, lng:6.780, statut:'patrouille', vitesse:31, equipe:'Petit / Garnier',     heure:'14:20' },
+  { id:6,  nom:'VL-83-006', type:'4x4',  secteur:'Esterel',     lat:43.490, lng:6.920, statut:'patrouille', vitesse:28, equipe:'Lefebvre / Simon',    heure:'14:19' },
+  { id:7,  nom:'VL-83-007', type:'4x4',  secteur:'Sainte-Baume',lat:43.320, lng:5.790, statut:'patrouille', vitesse:19, equipe:'Laurent / Michel',    heure:'14:23' },
+  { id:8,  nom:'VL-83-008', type:'4x4',  secteur:'Sainte-Baume',lat:43.355, lng:5.850, statut:'attente',    vitesse:0,  equipe:'Leroy / Moreau',      heure:'14:10' },
+  { id:9,  nom:'VL-83-009', type:'4x4',  secteur:'Bessillon',   lat:43.565, lng:6.030, statut:'patrouille', vitesse:33, equipe:'David / Robert',      heure:'14:21' },
+  { id:10, nom:'VL-83-010', type:'4x4',  secteur:'Plaine',      lat:43.420, lng:6.110, statut:'patrouille', vitesse:52, equipe:'Thomas / Richard',    heure:'14:22' },
+  { id:11, nom:'VL-83-011', type:'4x4',  secteur:'Plaine',      lat:43.390, lng:5.970, statut:'hs',         vitesse:0,  equipe:'-',                   heure:'11:30' },
+  { id:12, nom:'VL-83-012', type:'4x4',  secteur:'Maures',      lat:43.265, lng:6.340, statut:'patrouille', vitesse:27, equipe:'Durand / Bertrand',   heure:'14:20' },
+
+  // Porteurs d'eau / CCF (bleu)
+  { id:13, nom:'CCF-83-01', type:'eau',  secteur:'Maures',      lat:43.305, lng:6.460, statut:'patrouille', vitesse:18, equipe:'Mercier / Chevalier', heure:'14:17' },
+  { id:14, nom:'CCF-83-02', type:'eau',  secteur:'Esterel',     lat:43.455, lng:6.800, statut:'patrouille', vitesse:15, equipe:'Fournier / Rousseau', heure:'14:21' },
+  { id:15, nom:'CCF-83-03', type:'eau',  secteur:'Sainte-Baume',lat:43.340, lng:5.820, statut:'attente',    vitesse:0,  equipe:'Vincent / Morin',     heure:'14:05' },
+  { id:16, nom:'CCF-83-04', type:'eau',  secteur:'Bessillon',   lat:43.545, lng:6.060, statut:'patrouille', vitesse:12, equipe:'Leclerc / Simon',     heure:'14:19' },
+  { id:17, nom:'CCF-83-05', type:'eau',  secteur:'Plaine',      lat:43.440, lng:6.050, statut:'attente',    vitesse:0,  equipe:'Gérard / André',      heure:'14:08' },
+  { id:18, nom:'CCF-83-06', type:'eau',  secteur:'Maures',      lat:43.275, lng:6.500, statut:'hs',         vitesse:0,  equipe:'-',                   heure:'10:45' },
+
+  // Commandement (rouge)
+  { id:19, nom:'VPC-83-01', type:'cmd',  secteur:'Maures',      lat:43.315, lng:6.550, statut:'patrouille', vitesse:0,  equipe:'Cdt. Arnaud',         heure:'14:23' },
+  { id:20, nom:'VPC-83-02', type:'cmd',  secteur:'Esterel',     lat:43.480, lng:6.860, statut:'patrouille', vitesse:0,  equipe:'Cdt. Legrand',        heure:'14:22' },
 ];
 
-const SECTEURS = [
-  'CABRET','LA_DOMI','CLAPIERS','LA_FLEITE','LA_GAILLARDE',
-  'FOURNEL','ESTEREL','MAURES','MONASTERE','PALAYSON',
-  'JAUME','LES CLOS','VILLAGE','VALDINGARDE'
-];
-
-const REFERANTS = [
-  { nom: 'Référant_01', tel: '0610100010' },
-  { nom: 'Référant_02', tel: '0611110011' },
-  { nom: 'Référant_03', tel: '0612120012' },
-  { nom: 'Référant_04', tel: '0613130013' },
-  { nom: 'Référant_05', tel: '0614140014' },
-  { nom: 'Référant_06', tel: '0615150015' },
-  { nom: 'Référant_07', tel: '0616160016' },
-  { nom: 'Référant_08', tel: '0617170017' },
-  { nom: 'Référant_09', tel: '0618180018' },
-  { nom: 'Référant_10', tel: '0619190019' },
-  { nom: 'Référant_11', tel: '0620200020' },
-  { nom: 'Référant_12', tel: '0621210021' },
-  { nom: 'Référant_13', tel: '0622220022' },
-  { nom: 'Référant_14', tel: '0623230023' },
-  { nom: 'Référant_15', tel: '0624240024' },
-];
-
-const VEHICULES = [
-  'JIMNY','MITSU','PANDA','R5','R6','R7','R8','R9',
-  'V PERSO ALAIN','V PERSO RUBIO','V PERSO MARCO',
-  'TOYOTA FRANCIS','PETIT LAND','MOTO','QUAD','SPRINTER'
-];
-
-const HEURES_MEP = [
-  '5h45','6h00','6h15','6h30','6h45','7h00','7h15','7h30',
-  '7h45','8h00','8h15','8h30','8h45','9h00','9h15','9h30'
-];
-
-const BENEVOLES = Array.from({length: 65}, (_, i) => `Bénévole_${String(i+1).padStart(3,'0')}`);
-
-// ---- COURSES : brouillon fourni ----
-// Structure : { nomCourse: { jours: ['J2',...], ps: [100,101,...] } }
-const COURSES = {
-  'Enduro 40 Kms': {
-    jours: ['J3'],
-    ps: [31,32,33,34,35,36,37,38,39,40],
-    secteur: 'LA_GAILLARDE',
-    couleur: '#8E44AD'
+// --- MASSIFS FORESTIERS DU VAR (polygones simplifiés) ------------------------
+const massifs = [
+  {
+    nom: 'Massif des Maures',
+    couleur: '#2d7a2d',
+    coords: [
+      [43.420,6.210],[43.390,6.280],[43.330,6.320],[43.250,6.360],
+      [43.220,6.450],[43.230,6.560],[43.280,6.620],[43.360,6.630],
+      [43.400,6.580],[43.440,6.510],[43.450,6.420],[43.440,6.330],[43.420,6.210]
+    ]
   },
-  'Noire': {
-    jours: ['J2'],
-    ps: [100,101,102,103,104,105,106,107,108,109,110],
-    secteur: 'FOURNEL',
-    couleur: '#1A5276'
+  {
+    nom: "Massif de l'Estérel",
+    couleur: '#8b4513',
+    coords: [
+      [43.430,6.720],[43.400,6.760],[43.430,6.860],[43.480,6.950],
+      [43.530,6.950],[43.560,6.890],[43.545,6.800],[43.510,6.730],[43.430,6.720]
+    ]
   },
-};
-
-// Index rapide : numéro PS → liste de courses actives par jour
-// getCoursesForPS(psStr, jourId) → ['Enduro 40 Kms', ...]
-function getCoursesForPS(psStr, jourId) {
-  // extrait le numéro depuis "31 - Barrières..." ou "31" ou "171&172..."
-  const nums = (psStr || '').match(/\d+/g);
-  if (!nums) return [];
-  const found = [];
-  Object.entries(COURSES).forEach(([name, c]) => {
-    if (!Array.isArray(c.jours) || !c.jours.includes(jourId)) return;
-    if (!Array.isArray(c.ps)) return;
-    nums.forEach(n => {
-      if (c.ps.includes(parseInt(n)) && !found.includes(name)) found.push(name);
-    });
-  });
-  return found;
-}
-
-// PS par secteur (extrait de PARAM2)
-const PS_SECTEUR = {
-  'LA_GAILLARDE': [
-    '30 - Intersection entre S31/S30 bis','30 BIS - Draille vers le banc',
-    '31 - Barrières des Dolmens','32 - Intersection Tumulus et Druides',
-    '33 - Impasse des Celtes','34 - Haut club vacances Miléade',
-    '35 - Draille du Banc','36 - Descente draille du Banc',
-    '37 - La Clairière','38 - Haut passage gué nouvelle trace',
-    '39 - Intersection vallon de La Gaillarde',
-    '40 - Sortie du lotissement rue du Gattilier',
-    '41 - Intersection La Gaillarde / F102',
-  ],
-  'FOURNEL': [
-    '100 - ENTREE DRAILL SHEILA','101 - INTER SHEILA / PISTE AZENA',
-    '102 - INTER PISTE AZENA / GAFFE','103 - INTER LAC AZENA',
-    '104 - RUBALIZE','105 - HAUT DESCENTE LA GAFFE','106 - LA GAFFE',
-    '107 - TOURNANT DE LA BERQUE','108 - SORTIE DRAILLE DES BOSSES',
-    '109 - CARREFOUR GINESTOUE','110 - EMBLAVURE FOURNEL',
-    '113 - CARREFOUR BAS NICOLES',
-  ],
-  'CABRET': [
-    '116 - HAUT CARREFOUR NICOLES','116&117 - CARREFOUR BAS NICOLES + Gué',
-    '117 BIS - INTERSECTION NICOLES/CLAPIERS','118 - PILE A VICTOR ABBE',
-    '120 - SORTIE SENS INTERDIT BAS CABRET','121 - SOMMET CABRET',
-    '124 - ANTI TRICHE VICTORINE','124&125 - ANTI TRICHE VICTORINE',
-  ],
-  'LA_DOMI': [
-    '128 - LA DOMI','129 - CARREFOUR CHENE VICTORINE',
-    '130 - INTERSECTION TROU DE L\'ALLEMAND / LA MINE',
-    '132 - LA MINE','133 - LA MINE',
-  ],
-  'CLAPIERS': [
-    '170 - BAS DESCENTE TOUT OLIVIER','171 - AMBALAO',
-    '171&172 - AMBALAO CLAPIERS (DOUBLE SENS) + DRAILLE BAS CABRET',
-    '172 - BAS DRAILLE CABRET CLAPIERS','174 - RAG 6',
-    '176 - GAYOL','176&177 - GAYOL','180 - TRONC D\'HELENE',
-    '181 - SORTIE TRONC D\'HELENE','182 - BAS BASTIDE NEUVE',
-    '183 - SORTIE EX RAG 7','184 - BAS MONTEE BASTIDE NEUVE',
-    '186 - HAUT BASTIDE NEUVE','188 - ENTREE DRAILLE BOSSES',
-    '191 - MARCHES PAS DE L\'EOUVE','192 - CARREFOUR SOUS RAG7',
-    '194 - CARREFOUR LA PLANETE',
-  ],
-  'MAURES': [
-    '144&145 - GUE VERNEDE','152 - CASTELARD','153 - PANNEAU VERNET',
-    '154 - HAUT PANNEAU VERNET','157 - CARREFOUR SOUS RAG 5',
-  ],
-};
-
-// Données pré-remplies J1 (issues du xlsm)
-const PRELOAD = {
-  J1: [
-    { secteur: 'LA_GAILLARDE', referant: 'Référant_01', hmepSect: '6h00', collapsed: false, commentaires: ['','',''], rows: [
-      { ps: '33 - Impasse des Celtes', hmep: '6h30', vehA: 'MITSU', vehB: '', b1: 'Bénévole_006', b2: 'Bénévole_007', b3: '', b4: '', b5: '', com: 1, crs: 1, cmv: 1, obs: '' },
-      { ps: '31 - Barrières des Dolmens', hmep: '7h00', vehA: 'R8', vehB: '', b1: 'Bénévole_003', b2: 'Bénévole_032', b3: '', b4: '', b5: '', com: 1, crs: 0, cmv: 1, obs: '' },
-      { ps: '', hmep: '', vehA: '', vehB: '', b1: '', b2: '', b3: '', b4: '', b5: '', com: 0, crs: 0, cmv: 0, obs: '' },
-    ]},
-    { secteur: 'FOURNEL', referant: 'Référant_03', hmepSect: '7h00', collapsed: false, commentaires: ['','',''], rows: [
-      { ps: '106 - LA GAFFE', hmep: '7h15', vehA: 'PANDA', vehB: '', b1: 'Bénévole_037', b2: 'Bénévole_061', b3: '', b4: '', b5: '', com: 0, crs: 1, cmv: 1, obs: '' },
-      { ps: '', hmep: '', vehA: '', vehB: '', b1: '', b2: '', b3: '', b4: '', b5: '', com: 0, crs: 0, cmv: 0, obs: '' },
-    ]},
-    { secteur: 'CLAPIERS', referant: 'Référant_05', hmepSect: '6h30', collapsed: false, commentaires: ['','',''], rows: [
-      { ps: '171&172 - AMBALAO CLAPIERS (DOUBLE SENS) + DRAILLE BAS CABRET', hmep: '6h45', vehA: 'MITSU', vehB: '', b1: 'Bénévole_004', b2: 'Bénévole_006', b3: '', b4: '', b5: '', com: 1, crs: 1, cmv: 1, obs: '' },
-      { ps: '172 - BAS DRAILLE CABRET CLAPIERS', hmep: '9h15', vehA: '', vehB: '', b1: 'Bénévole_004', b2: '', b3: '', b4: '', b5: '', com: 0, crs: 0, cmv: 0, obs: 'déposé par MITSU' },
-      { ps: '', hmep: '', vehA: '', vehB: '', b1: '', b2: '', b3: '', b4: '', b5: '', com: 0, crs: 0, cmv: 0, obs: '' },
-    ]},
-  ],
-  J3: [
-    { secteur: 'CLAPIERS', referant: 'Référant_02', hmepSect: '7h00', collapsed: false, commentaires: ['','',''], rows: [
-      { ps: '171 - AMBALAO', hmep: '6h30', vehA: 'R9', vehB: '', b1: 'Bénévole_065', b2: 'Bénévole_050', b3: '', b4: '', b5: '', com: 1, crs: 1, cmv: 1, obs: '' },
-      { ps: '172 - BAS DRAILLE CABRET CLAPIERS', hmep: '7h00', vehA: 'JIMNY', vehB: '', b1: 'Bénévole_004', b2: 'Bénévole_043', b3: '', b4: '', b5: '', com: 1, crs: 0, cmv: 1, obs: '' },
-      { ps: '171&172 - AMBALAO CLAPIERS (DOUBLE SENS) + DRAILLE BAS CABRET', hmep: '7h00', vehA: '', vehB: '', b1: 'Bénévole_022', b2: 'Bénévole_040', b3: '', b4: '', b5: '', com: 1, crs: 0, cmv: 0, obs: 'Déposé par R9' },
-    ]},
-  ],
-};
-
-// ========================================================
-// STATE
-// ========================================================
-let currentJour = 'J1';
-let state = {}; // { J1: [{secteur, referant, hmepSect, rows:[...]}], ... }
-
-function initState() {
-  JOURS.forEach(j => {
-    if (PRELOAD[j.id]) {
-      state[j.id] = JSON.parse(JSON.stringify(PRELOAD[j.id]));
-    } else {
-      state[j.id] = [];
-    }
-  });
-}
-
-// ========================================================
-// RENDER
-// ========================================================
-function buildSelect(options, selected, placeholder, cls) {
-  let html = `<select class="${cls}"><option value="">${placeholder}</option>`;
-  options.forEach(o => {
-    const val = typeof o === 'object' ? o.nom : o;
-    html += `<option value="${val}" ${val === selected ? 'selected' : ''}>${val}</option>`;
-  });
-  html += '</select>';
-  return html;
-}
-
-function buildPSOptions(secteur, selected) {
-  const list = PS_SECTEUR[secteur] || [];
-  let html = `<select class="ps-select" style="width:100%"><option value="">— choisir PS —</option>`;
-  list.forEach(ps => {
-    html += `<option value="${ps}" ${ps === selected ? 'selected' : ''}>${ps}</option>`;
-  });
-  html += `<option value="${selected}" ${selected && !list.includes(selected) ? 'selected' : ''}>${selected && !list.includes(selected) ? selected : ''}</option>`;
-  // allow free text fallback
-  html += '</select>';
-  return html;
-}
-
-function renderJours() {
-  const container = document.getElementById('jourSelector');
-  container.innerHTML = JOURS.map(j =>
-    `<button class="btn-jour ${j.id === currentJour ? 'active' : ''}" onclick="switchJour('${j.id}')">${j.label}</button>`
-  ).join('');
-}
-
-function renderAll() {
-  renderJours();
-  const dateInfo = JOURS.find(j => j.id === currentJour);
-  document.getElementById('dateLabel').textContent = `${dateInfo.date} — ${currentJour}`;
-  document.getElementById('secteursContainer').innerHTML = '';
-  const secteurs = state[currentJour] || [];
-  secteurs.forEach((s, si) => renderSecteur(si));
-  updateStats();
-  checkConflicts();
-}
-
-function renderSecteur(si) {
-  const container = document.getElementById('secteursContainer');
-  const s = state[currentJour][si];
-  const refObj = REFERANTS.find(r => r.nom === s.referant);
-  const tel = refObj ? refObj.tel : '';
-  const collapsed = s.collapsed ? 'collapsed' : '';
-
-  const div = document.createElement('div');
-  div.className = `secteur-bloc ${collapsed}`;
-  div.id = `sect-${si}`;
-
-  // build PS table rows
-  let rowsHtml = '';
-  (s.rows || []).forEach((row, ri) => {
-    rowsHtml += renderPSRow(si, ri, row, s.secteur);
-  });
-
-  // secteur name options
-  let sectOpts = SECTEURS.map(sec =>
-    `<option value="${sec}" ${sec === s.secteur ? 'selected' : ''}>${sec}</option>`
-  ).join('');
-
-  // referant options
-  let refOpts = `<option value="">— Référant —</option>` + REFERANTS.map(r =>
-    `<option value="${r.nom}" ${r.nom === s.referant ? 'selected' : ''}>${r.nom}</option>`
-  ).join('');
-
-  // heure mep options
-  let heureOpts = `<option value="">— H MeP —</option>` + HEURES_MEP.map(h =>
-    `<option value="${h}" ${h === s.hmepSect ? 'selected' : ''}>${h}</option>`
-  ).join('');
-
-  div.innerHTML = `
-    <div class="secteur-header" onclick="toggleCollapse(${si}, event)">
-      <div class="secteur-num">${si + 1}</div>
-      <select class="secteur-name-select" onchange="changeSecteur(${si}, this.value)" onclick="event.stopPropagation()">
-        ${sectOpts}
-      </select>
-      <div class="secteur-meta">
-        <div class="meta-field">
-          <label>Référant</label>
-          <select class="meta-select" onchange="changeReferant(${si}, this.value)" onclick="event.stopPropagation()">
-            ${refOpts}
-          </select>
-        </div>
-        <div class="meta-field">
-          <span class="meta-tel" id="tel-${si}">${tel ? '📞 ' + tel : ''}</span>
-        </div>
-        <div class="meta-field">
-          <label>H MeP sect.</label>
-          <select class="meta-select" style="width:80px" onchange="changeHmepSect(${si}, this.value)" onclick="event.stopPropagation()">
-            ${heureOpts}
-          </select>
-        </div>
-      </div>
-      <div class="secteur-actions" onclick="event.stopPropagation()">
-        <button class="btn-sm success" onclick="addPS(${si})">+ PS</button>
-        <button class="btn-sm danger" onclick="removeSecteur(${si})">✕</button>
-        <span class="toggle-icon">▾</span>
-      </div>
-    </div>
-    <div class="table-wrapper">
-      <table class="ps-table">
-        <thead>
-          <tr>
-            <th style="width:28px">#</th>
-            <th class="col-ps">SITE / POINT SIGNALEUR</th>
-            <th class="col-hmep">H MeP</th>
-            <th class="col-veh">VÉH A</th>
-            <th class="col-veh">VÉH B</th>
-            <th class="col-benv">BÉNÉVOLE 1</th>
-            <th class="col-benv">BÉNÉVOLE 2</th>
-            <th class="col-benv">BÉNÉVOLE 3</th>
-            <th class="col-radio col-radios">COM</th>
-            <th class="col-radio col-radios">CRS</th>
-            <th class="col-radio col-radios">CMV</th>
-            <th class="col-obs">OBSERVATIONS</th>
-            <th class="col-course">COURSE(S)</th>
-            <th class="col-del"></th>
-          </tr>
-        </thead>
-        <tbody id="rows-${si}">${rowsHtml}</tbody>
-      </table>
-      <button class="btn-add-ps" onclick="addPS(${si})">＋ Ajouter un point signaleur</button>
-    </div>
-    <div class="secteur-commentaires">
-      <div class="commentaires-label" id="comm-label-${si}">📝 Commentaires pour le référant <strong>${s.secteur}</strong></div>
-      <div class="commentaires-grid">
-        ${[0,1,2].map(ci => `
-          <div class="comment-row">
-            <span class="comment-num">${ci+1}.</span>
-            <input type="text" class="comment-input ${(s.commentaires||[])[ci] ? 'has-value' : ''}"
-              placeholder="Commentaire ${ci+1}…"
-              value="${((s.commentaires||[])[ci] || '').replace(/"/g,'&quot;')}"
-              oninput="updateCommentaire(${si},${ci},this.value); this.classList.toggle('has-value', !!this.value)">
-          </div>`).join('')}
-      </div>
-    </div>
-  `;
-  container.appendChild(div);
-}
-
-function renderPSRow(si, ri, row, secteur) {
-  const benvOpts = (val) => `<option value="">—</option>` + BENEVOLES.map(b =>
-    `<option value="${b}" ${b === val ? 'selected' : ''}>${b}</option>`
-  ).join('');
-  const vehOpts = (val) => `<option value="">—</option>` + VEHICULES.map(v =>
-    `<option value="${v}" ${v === val ? 'selected' : ''}>${v}</option>`
-  ).join('');
-  const heureOpts = (val) => `<option value="">—</option>` + HEURES_MEP.map(h =>
-    `<option value="${h}" ${h === val ? 'selected' : ''}>${h}</option>`
-  ).join('');
-
-  // PS select
-  const psList = PS_SECTEUR[secteur] || [];
-  let psOpts = `<option value="">— choisir PS —</option>` + psList.map(ps =>
-    `<option value="${ps}" ${ps === row.ps ? 'selected' : ''}>${ps}</option>`
-  ).join('');
-  if (row.ps && !psList.includes(row.ps)) {
-    psOpts += `<option value="${row.ps}" selected>${row.ps}</option>`;
+  {
+    nom: 'Sainte-Baume',
+    couleur: '#4a7a6a',
+    coords: [
+      [43.290,5.700],[43.270,5.760],[43.310,5.870],[43.360,5.920],
+      [43.400,5.880],[43.390,5.790],[43.350,5.720],[43.290,5.700]
+    ]
+  },
+  {
+    nom: 'Bessillon',
+    couleur: '#6a5a2a',
+    coords: [
+      [43.520,5.990],[43.510,6.040],[43.545,6.100],[43.580,6.090],
+      [43.590,6.040],[43.560,5.990],[43.520,5.990]
+    ]
   }
+];
 
-  return `
-    <tr id="row-${si}-${ri}" data-si="${si}" data-ri="${ri}">
-      <td class="col-num">${ri + 1}</td>
-      <td class="col-ps">
-        <select onchange="updateRow(${si},${ri},'ps',this.value); refreshCoursePills(${si},${ri},this.value);" class="ps-select">
-          ${psOpts}
-        </select>
-      </td>
-      <td class="col-hmep">
-        <select onchange="updateRow(${si},${ri},'hmep',this.value)">
-          ${heureOpts(row.hmep)}
-        </select>
-      </td>
-      <td class="col-veh">
-        <select onchange="updateRow(${si},${ri},'vehA',this.value)">
-          ${vehOpts(row.vehA)}
-        </select>
-      </td>
-      <td class="col-veh">
-        <select onchange="updateRow(${si},${ri},'vehB',this.value)">
-          ${vehOpts(row.vehB)}
-        </select>
-      </td>
-      <td class="col-benv" id="benv-${si}-${ri}-1">
-        <select onchange="updateRow(${si},${ri},'b1',this.value)">
-          ${benvOpts(row.b1)}
-        </select>
-      </td>
-      <td class="col-benv" id="benv-${si}-${ri}-2">
-        <select onchange="updateRow(${si},${ri},'b2',this.value)">
-          ${benvOpts(row.b2)}
-        </select>
-      </td>
-      <td class="col-benv" id="benv-${si}-${ri}-3">
-        <select onchange="updateRow(${si},${ri},'b3',this.value)">
-          ${benvOpts(row.b3)}
-        </select>
-      </td>
-      <td class="col-radio">
-        <input type="number" class="radio-num com ${(row.com||0)>0?'has-value':''}" min="0" max="9"
-          value="${(row.com||0)>0 ? row.com : ''}" placeholder="0" title="Nb radios COM"
-          onchange="updateRow(${si},${ri},'com',+this.value||0); this.classList.toggle('has-value',+this.value>0)">
-      </td>
-      <td class="col-radio">
-        <input type="number" class="radio-num crs ${(row.crs||0)>0?'has-value':''}" min="0" max="9"
-          value="${(row.crs||0)>0 ? row.crs : ''}" placeholder="0" title="Nb radios CRS"
-          onchange="updateRow(${si},${ri},'crs',+this.value||0); this.classList.toggle('has-value',+this.value>0)">
-      </td>
-      <td class="col-radio">
-        <input type="number" class="radio-num cmv ${(row.cmv||0)>0?'has-value':''}" min="0" max="9"
-          value="${(row.cmv||0)>0 ? row.cmv : ''}" placeholder="0" title="Nb radios CMV"
-          onchange="updateRow(${si},${ri},'cmv',+this.value||0); this.classList.toggle('has-value',+this.value>0)">
-      </td>
-      <td class="col-obs">
-        <input type="text" placeholder="Obs…" value="${row.obs || ''}"
-          oninput="updateRow(${si},${ri},'obs',this.value)">
-      </td>
-      <td class="col-course" id="course-${si}-${ri}">
-        ${renderCoursePills(row.ps, currentJour)}
-      </td>
-      <td class="col-del">
-        <button class="btn-del-row" onclick="deleteRow(${si},${ri})" title="Supprimer">✕</button>
-      </td>
-    </tr>
-  `;
-}
+// --- INIT CARTE ---------------------------------------------------------------
+const map = L.map('map', {
+  center: [43.38, 6.22],
+  zoom: 10,
+  zoomControl: true,
+  attributionControl: false
+});
 
-// ========================================================
-// ACTIONS
-// ========================================================
-function switchJour(jid) {
-  currentJour = jid;
-  renderAll();
-}
+// Fonds de carte - tuiles 100% publiques (fonctionnent en file:// sans clé API)
+const layers = {
+  'osm': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }),
+  'osm-topo': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    maxZoom: 17,
+    attribution: '© OpenTopoMap (CC-BY-SA)'
+  }),
+  'satellite': L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 19, attribution: '© Esri World Imagery' }
+  ),
+  'esri-topo': L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 19, attribution: '© Esri World Topo' }
+  )
+};
 
-function addSecteur() {
-  state[currentJour].push({
-    secteur: SECTEURS[0], referant: '', hmepSect: '6h00', collapsed: false,
-    commentaires: ['','',''],
-    rows: [emptyRow()]
+let currentLayer = layers['osm'].addTo(map);
+let currentLayerKey = 'osm';
+
+// --- LAYER SWITCHER ----------------------------------------------------------
+function setLayer(key) {
+  map.removeLayer(currentLayer);
+  currentLayer = layers[key].addTo(map);
+  currentLayerKey = key;
+  if (massifLayer) massifLayer.bringToFront();
+  document.querySelectorAll('.layer-btn').forEach((btn,i) => {
+    if (i < 4) btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${key}'`));
   });
-  renderAll();
-  // scroll to bottom
-  setTimeout(() => {
-    const last = document.getElementById(`sect-${state[currentJour].length - 1}`);
-    if (last) last.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 100);
 }
 
-function removeSecteur(si) {
-  if (state[currentJour].length <= 1) { toast('Au moins 1 secteur requis', 'warn'); return; }
-  if (confirm(`Supprimer le secteur ${state[currentJour][si].secteur} ?`)) {
-    state[currentJour].splice(si, 1);
-    renderAll();
-  }
-}
+// --- MASSIFS -----------------------------------------------------------------
+let massifLayer = null;
+let massifVisible = false;
 
-function toggleCollapse(si, e) {
-  state[currentJour][si].collapsed = !state[currentJour][si].collapsed;
-  const bloc = document.getElementById(`sect-${si}`);
-  bloc.classList.toggle('collapsed');
-}
-
-function changeSecteur(si, val) {
-  state[currentJour][si].secteur = val;
-  // update commentaires label
-  const lbl = document.getElementById(`comm-label-${si}`);
-  if (lbl) lbl.innerHTML = `📝 Commentaires pour le référant <strong>${val}</strong>`;
-  // re-render only that secteur's rows to update PS dropdowns
-  const tbody = document.getElementById(`rows-${si}`);
-  tbody.innerHTML = state[currentJour][si].rows.map((r, ri) =>
-    renderPSRow(si, ri, r, val)
-  ).join('');
-  checkConflicts();
-}
-
-function changeReferant(si, val) {
-  state[currentJour][si].referant = val;
-  const refObj = REFERANTS.find(r => r.nom === val);
-  document.getElementById(`tel-${si}`).textContent = refObj ? '📞 ' + refObj.tel : '';
-}
-
-function changeHmepSect(si, val) {
-  state[currentJour][si].hmepSect = val;
-}
-
-function addPS(si) {
-  state[currentJour][si].rows.push(emptyRow());
-  const ri = state[currentJour][si].rows.length - 1;
-  const tbody = document.getElementById(`rows-${si}`);
-  tbody.insertAdjacentHTML('beforeend',
-    renderPSRow(si, ri, state[currentJour][si].rows[ri], state[currentJour][si].secteur)
-  );
-  updateStats();
-}
-
-function deleteRow(si, ri) {
-  const rows = state[currentJour][si].rows;
-  if (rows.length <= 1) { toast('Au moins 1 ligne par secteur', 'warn'); return; }
-  rows.splice(ri, 1);
-  // re-render rows for this secteur
-  const tbody = document.getElementById(`rows-${si}`);
-  tbody.innerHTML = rows.map((r, ri2) =>
-    renderPSRow(si, ri2, r, state[currentJour][si].secteur)
-  ).join('');
-  updateStats();
-  checkConflicts();
-}
-
-function updateRow(si, ri, field, val) {
-  state[currentJour][si].rows[ri][field] = val;
-  updateStats();
-  checkConflicts();
-}
-
-function updateCommentaire(si, ci, val) {
-  if (!state[currentJour][si].commentaires) state[currentJour][si].commentaires = ['','',''];
-  state[currentJour][si].commentaires[ci] = val;
-}
-
-function emptyRow() {
-  return { ps:'', hmep:'', vehA:'', vehB:'', b1:'', b2:'', b3:'', b4:'', b5:'',
-           com:0, crs:0, cmv:0, obs:'' };
-}
-
-// ========================================================
-// STATS
-// ========================================================
-function updateStats() {
-  const sects = state[currentJour] || [];
-  let ps = 0, benv = 0, veh = new Set();
-  sects.forEach(s => {
-    s.rows.forEach(r => {
-      if (r.ps) ps++;
-      ['b1','b2','b3','b4','b5'].forEach(k => { if (r[k]) benv++; });
-      if (r.vehA) veh.add(r.vehA);
-      if (r.vehB) veh.add(r.vehB);
-    });
-  });
-  document.getElementById('statPS').textContent = ps;
-  document.getElementById('statBenv').textContent = benv;
-  document.getElementById('statVeh').textContent = veh.size;
-}
-
-// ========================================================
-// CONFLICT CHECK — bénévoles doublons + radios max + véhicules doublons
-// ========================================================
-const RADIO_MAX = { com: 20, crs: 15, cmv: 10 };
-
-function checkConflicts() {
-  const sects = state[currentJour] || [];
-  const benvCount = {}, vehCount = {};
-  let totalCOM = 0, totalCRS = 0, totalCMV = 0;
-
-  sects.forEach(s => {
-    s.rows.forEach(r => {
-      ['b1','b2','b3','b4','b5'].forEach(k => {
-        if (r[k]) benvCount[r[k]] = (benvCount[r[k]] || 0) + 1;
-      });
-      if (r.vehA) vehCount[r.vehA] = (vehCount[r.vehA] || 0) + 1;
-      if (r.vehB) vehCount[r.vehB] = (vehCount[r.vehB] || 0) + 1;
-      totalCOM += (r.com || 0);
-      totalCRS += (r.crs || 0);
-      totalCMV += (r.cmv || 0);
-    });
-  });
-
-  // --- Bénévoles doublons (highlight cellule) ---
-  let hasBenvConflict = false;
-  document.querySelectorAll('.conflict-cell').forEach(el => el.classList.remove('conflict-cell'));
-  sects.forEach((s, si) => {
-    s.rows.forEach((r, ri) => {
-      ['b1','b2','b3'].forEach((k, ki) => {
-        if (r[k] && benvCount[r[k]] > 1) {
-          const td = document.querySelector(`#benv-${si}-${ri}-${ki+1}`);
-          if (td) { td.classList.add('conflict-cell'); hasBenvConflict = true; }
-        }
-      });
-    });
-  });
-  const badge = document.getElementById('badgeConflicts');
-  if (hasBenvConflict) {
-    const dups = Object.entries(benvCount).filter(([,v]) => v > 1).map(([k]) => k);
-    badge.style.display = 'inline';
-    badge.textContent = `⚠ ${dups.length} conflit(s) bénévoles`;
+function toggleMassifs() {
+  const btn = document.getElementById('btn-massifs');
+  if (massifVisible) {
+    if (massifLayer) map.removeLayer(massifLayer);
+    massifLayer = null;
+    massifVisible = false;
+    btn.classList.remove('active');
   } else {
-    badge.style.display = 'none';
-  }
-
-  // --- A5 : Radio totaux + pills ---
-  const totals = { com: totalCOM, crs: totalCRS, cmv: totalCMV };
-  const labels = { com: 'COM', crs: 'CRS', cmv: 'CMV' };
-  const maxes  = { com: RADIO_MAX.com, crs: RADIO_MAX.crs, cmv: RADIO_MAX.cmv };
-  ['com','crs','cmv'].forEach(t => {
-    const el = document.getElementById(`stat${t.toUpperCase()}`);
-    if (!el) return;
-    el.textContent = `${labels[t]} ${totals[t]}/${maxes[t]}`;
-    el.classList.toggle('over', totals[t] > maxes[t]);
-  });
-
-  // --- A6 : Véhicules doublons (highlight) ---
-  document.querySelectorAll('.conflict-veh').forEach(el => el.classList.remove('conflict-veh'));
-  sects.forEach((s, si) => {
-    s.rows.forEach((r, ri) => {
-      if (r.vehA && vehCount[r.vehA] > 1) {
-        const row = document.getElementById(`row-${si}-${ri}`);
-        if (row) { const cells = row.querySelectorAll('td'); if(cells[3]) cells[3].classList.add('conflict-veh'); }
-      }
-      if (r.vehB && vehCount[r.vehB] > 1) {
-        const row = document.getElementById(`row-${si}-${ri}`);
-        if (row) { const cells = row.querySelectorAll('td'); if(cells[4]) cells[4].classList.add('conflict-veh'); }
-      }
+    massifLayer = L.layerGroup();
+    massifs.forEach(m => {
+      L.polygon(m.coords, {
+        color: m.couleur, weight: 2,
+        fillColor: m.couleur, fillOpacity: 0.18,
+        dashArray: '4,4'
+      }).bindPopup(`<b style="color:${m.couleur}">${m.nom}</b>`).addTo(massifLayer);
+      const center = m.coords.reduce((a,c) => [a[0]+c[0]/m.coords.length, a[1]+c[1]/m.coords.length], [0,0]);
+      L.marker(center, {
+        icon: L.divIcon({ className: 'massif-label', html: m.nom, iconSize: null, iconAnchor: null })
+      }).addTo(massifLayer);
     });
-  });
-
-  // --- Build alerts bar ---
-  const alerts = [];
-
-  // A5-2 : radio over-limit
-  ['com','crs','cmv'].forEach(t => {
-    if (totals[t] > maxes[t]) {
-      alerts.push(`<div class="alert-item radio-over">
-        <span class="alert-icon">📻</span>
-        <span class="alert-text">Radios <strong>${labels[t]}</strong> : <strong>${totals[t]}</strong> attribuées — max autorisé : <strong>${maxes[t]}</strong> (dépassement de ${totals[t]-maxes[t]})</span>
-      </div>`);
-    }
-  });
-
-  // A6 : véhicules utilisés plus d'une fois
-  Object.entries(vehCount).forEach(([veh, cnt]) => {
-    if (cnt > 1) {
-      alerts.push(`<div class="alert-item veh-double">
-        <span class="alert-icon">🚗</span>
-        <span class="alert-text">Véhicule <strong>${veh}</strong> utilisé <strong>${cnt}×</strong> sur ${JOURS.find(j=>j.id===currentJour)?.label} — vérifier l'affectation</span>
-      </div>`);
-    }
-  });
-
-  document.getElementById('alertsBar').innerHTML = alerts.join('');
-}
-
-// ========================================================
-// REPORT
-// ========================================================
-function openReport() {
-  const jourId   = currentJour;
-  const dateInfo = JOURS.find(j => j.id === jourId);
-  document.getElementById('reportTitle').textContent =
-    `ROC D'AZUR 2026 — ${dateInfo.date}`;
-
-  const body  = document.getElementById('reportBody');
-  body.innerHTML = '';
-  const sects = state[jourId] || [];
-
-  // Totaux globaux Jx
-  let gtPS=0, gtBenv=0, gtCOM=0, gtCRS=0, gtCMV=0;
-  const gtVehs = new Set();
-  sects.forEach(s => s.rows.forEach(r => {
-    if (!r.ps) return; gtPS++;
-    [r.b1,r.b2,r.b3,r.b4,r.b5].forEach(b => { if(b) gtBenv++; });
-    if(r.vehA) gtVehs.add(r.vehA); if(r.vehB) gtVehs.add(r.vehB);
-    gtCOM += (r.com||0); gtCRS += (r.crs||0); gtCMV += (r.cmv||0);
-  }));
-
-  // En-tête global
-  body.insertAdjacentHTML('beforeend', `
-    <div class="fs-titre" style="margin-bottom:4px">REPORT JOURNALIER — ${jourId}</div>
-    <div class="fs-sous-titre">${dateInfo.date} — ${sects.length} secteur(s)</div>
-    <div class="fs-section">
-      <div class="fs-section-header">📊 Totaux journée</div>
-      <div class="fs-section-body">
-        <div class="fs-info-grid">
-          <div class="fs-info-item">
-            <div class="fs-info-label">PS actifs</div>
-            <div class="fs-info-val rouge">${gtPS}</div>
-          </div>
-          <div class="fs-info-item">
-            <div class="fs-info-label">Bénévoles</div>
-            <div class="fs-info-val vert">${gtBenv}</div>
-          </div>
-          <div class="fs-info-item">
-            <div class="fs-info-label">Véhicules</div>
-            <div class="fs-info-val bleu">${gtVehs.size}</div>
-          </div>
-          <div class="fs-info-item">
-            <div class="fs-info-label">Radios</div>
-            <div class="fs-info-val" style="font-size:12px">
-              ${gtCOM ? `<span style="color:#1A5276;font-weight:700">${gtCOM} COM</span> ` : ''}
-              ${gtCRS ? `<span style="color:#922B21;font-weight:700">${gtCRS} CRS</span> ` : ''}
-              ${gtCMV ? `<span style="color:#1E8449;font-weight:700">${gtCMV} CMV</span>` : ''}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `);
-
-  sects.forEach(s => {
-    const rows  = s.rows.filter(r => r.ps);
-    const comms = (s.commentaires || []).filter(Boolean);
-    const tel   = s.telReferant || (REFERANTS.find(r => r.nom === s.referant)||{}).tel || '';
-
-    let sPS=0, sBenv=0, sCOM=0, sCRS=0, sCMV=0;
-    const sVehs = new Set();
-    rows.forEach(r => {
-      sPS++;
-      [r.b1,r.b2,r.b3,r.b4,r.b5].forEach(b => { if(b) sBenv++; });
-      if(r.vehA) sVehs.add(r.vehA); if(r.vehB) sVehs.add(r.vehB);
-      sCOM += (r.com||0); sCRS += (r.crs||0); sCMV += (r.cmv||0);
-    });
-
-    let html = `
-      <div class="fs-section" style="margin-bottom:18px">
-        <div class="fs-section-header" style="display:flex;align-items:center;flex-wrap:wrap;gap:10px">
-          <span style="font-size:16px;letter-spacing:1px">▸ ${s.secteur}</span>
-          <span style="font-size:12px;opacity:.85">Réf: <strong>${s.referant}</strong></span>
-          ${tel ? `<span style="font-size:12px;color:#F39C12">📞 ${tel}</span>` : ''}
-          <span style="font-size:12px;opacity:.85">H MeP: <strong style="color:#E67E22">${s.hmepSect||'—'}</strong></span>
-          <span style="margin-left:auto;font-size:11px;opacity:.7">${sPS} PS · ${sBenv} bénév. · ${sVehs.size} véh.${sCOM?' · '+sCOM+'COM':''}${sCRS?' · '+sCRS+'CRS':''}${sCMV?' · '+sCMV+'CMV':''}</span>
-        </div>`;
-
-    if (!rows.length) {
-      html += `<div class="fs-empty">Aucun PS saisi</div>`;
-    } else {
-      html += `<div class="fs-section-body" style="padding:0"><table class="fs-table"><thead><tr>
-        <th>PS / Lieu-dit</th><th>H MeP</th><th>Véh A</th><th>Véh B</th>
-        <th>Bénévoles</th><th>Radios</th><th>Course(s)</th><th>Observations</th>
-      </tr></thead><tbody>`;
-      rows.forEach(r => {
-        const benvs = [r.b1,r.b2,r.b3,r.b4,r.b5].filter(Boolean).join('<br>');
-        const radios = [
-          r.com ? `<span class="fs-radio-pill com">${r.com} COM</span>` : '',
-          r.crs ? `<span class="fs-radio-pill crs">${r.crs} CRS</span>` : '',
-          r.cmv ? `<span class="fs-radio-pill cmv">${r.cmv} CMV</span>` : '',
-        ].join('');
-        const courses = renderCoursePills(r.ps, jourId) || '—';
-        html += `<tr>
-          <td><strong>${r.ps}</strong></td>
-          <td><strong style="color:#C0392B">${r.hmep||'—'}</strong></td>
-          <td>${r.vehA||'—'}</td><td>${r.vehB||'—'}</td>
-          <td style="font-size:11px">${benvs||'—'}</td>
-          <td>${radios||'—'}</td>
-          <td>${courses}</td>
-          <td style="font-size:11px;color:#555">${r.obs||''}</td>
-        </tr>`;
-      });
-      html += `</tbody></table></div>`;
-    }
-    html += `</div>`;
-    body.insertAdjacentHTML('beforeend', html);
-  });
-
-  body.insertAdjacentHTML('beforeend',
-    `<button class="btn-fiche-print btn-print-report" onclick="imprimerReport()">🖨 Imprimer ce report</button>`);
-
-  document.getElementById('reportOverlay').classList.add('active');
-}
-
-function closeReport() {
-  document.getElementById('reportOverlay').classList.remove('active');
-}
-
-// ========================================================
-// FICHE SECTEUR
-// ========================================================
-function openFicheSecteur() {
-  // Remplir les selects
-  const selSect = document.getElementById('fsSecteurSelect');
-  const selJour = document.getElementById('fsJourSelect');
-
-  // Secteurs présents dans le state du jour courant + tous secteurs connus
-  const secteursDispos = [...new Set([
-    ...SECTEURS,
-    ...(state[currentJour] || []).map(s => s.secteur)
-  ])];
-  selSect.innerHTML = secteursDispos.map(s =>
-    `<option value="${s}">${s}</option>`
-  ).join('');
-  // Pré-sélectionner le premier secteur du jour courant si dispo
-  const premierSect = (state[currentJour] || [])[0];
-  if (premierSect) selSect.value = premierSect.secteur;
-
-  selJour.innerHTML = JOURS.map(j =>
-    `<option value="${j.id}" ${j.id === currentJour ? 'selected' : ''}>${j.label} — ${j.date}</option>`
-  ).join('');
-
-  document.getElementById('ficheSectOverlay').classList.add('active');
-  renderFicheSecteur();
-}
-
-function closeFicheSecteur() {
-  document.getElementById('ficheSectOverlay').classList.remove('active');
-}
-
-function imprimerFicheSecteur() {
-  document.body.classList.remove('print-report');
-  document.body.classList.add('print-fiche-sect');
-  window.print();
-  setTimeout(() => document.body.classList.remove('print-fiche-sect'), 1000);
-}
-
-function imprimerReport() {
-  document.body.classList.remove('print-fiche-sect');
-  document.body.classList.add('print-report');
-  window.print();
-  setTimeout(() => document.body.classList.remove('print-report'), 1000);
-}
-
-function renderFicheSecteur() {
-  const secteurNom = document.getElementById('fsSecteurSelect').value;
-  const jourId     = document.getElementById('fsJourSelect').value;
-  const body       = document.getElementById('ficheSectBody');
-  const jourInfo   = JOURS.find(j => j.id === jourId);
-
-  // Trouver les données du secteur pour ce jour
-  const sectData = (state[jourId] || []).find(s => s.secteur === secteurNom);
-
-  if (!sectData) {
-    body.innerHTML = `<div class="fs-empty">Aucune saisie pour le secteur <strong>${secteurNom}</strong> en ${jourId}.</div>`;
-    return;
-  }
-
-  const rows = sectData.rows.filter(r => r.ps);
-  const comms = (sectData.commentaires || []).filter(Boolean);
-
-  // ── Totaux secteur ───────────────────────────────────────────────────────
-  let totalCOM=0, totalCRS=0, totalCMV=0, totalBenv=0;
-  const vehs = new Set();
-  rows.forEach(r => {
-    totalCOM += (r.com||0); totalCRS += (r.crs||0); totalCMV += (r.cmv||0);
-    [r.b1,r.b2,r.b3,r.b4,r.b5].forEach(b => { if(b) totalBenv++; });
-    if(r.vehA) vehs.add(r.vehA);
-    if(r.vehB) vehs.add(r.vehB);
-  });
-
-  // ── Helper courses pour un PS ────────────────────────────────────────────
-  function coursesForPS(psStr, jour) {
-    const nums = (psStr||'').match(/\d+/g)?.map(Number) || [];
-    return Object.entries(COURSES)
-      .filter(([,c]) => Array.isArray(c.ps) && nums.some(n => c.ps.includes(n)))
-      .map(([nom]) => nom);
-  }
-
-  // ── HTML ─────────────────────────────────────────────────────────────────
-  let html = `
-    <div class="fs-titre">SECTEUR ${secteurNom}</div>
-    <div class="fs-sous-titre">
-      ROC D'AZUR 2026 — ${jourInfo.date} (${jourId})
-    </div>
-
-    <!-- IDENTIFICATION -->
-    <div class="fs-section">
-      <div class="fs-section-header">📍 Identification</div>
-      <div class="fs-section-body">
-        <div class="fs-info-grid">
-          <div class="fs-info-item">
-            <div class="fs-info-label">Secteur</div>
-            <div class="fs-info-val bleu">${secteurNom}</div>
-          </div>
-          <div class="fs-info-item">
-            <div class="fs-info-label">Référant</div>
-            <div class="fs-info-val">${sectData.referant || '—'}</div>
-          </div>
-          <div class="fs-info-item">
-            <div class="fs-info-label">H MeP Secteur</div>
-            <div class="fs-info-val rouge">${sectData.hmepSect || '—'}</div>
-          </div>
-          <div class="fs-info-item">
-            <div class="fs-info-label">Jour</div>
-            <div class="fs-info-val">${jourInfo.date}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RECAP CHIFFRES -->
-    <div class="fs-section">
-      <div class="fs-section-header">📊 Récapitulatif</div>
-      <div class="fs-section-body">
-        <div class="fs-info-grid">
-          <div class="fs-info-item">
-            <div class="fs-info-label">PS actifs</div>
-            <div class="fs-info-val rouge">${rows.length}</div>
-          </div>
-          <div class="fs-info-item">
-            <div class="fs-info-label">Bénévoles</div>
-            <div class="fs-info-val vert">${totalBenv}</div>
-          </div>
-          <div class="fs-info-item">
-            <div class="fs-info-label">Véhicules</div>
-            <div class="fs-info-val bleu">${vehs.size}</div>
-          </div>
-          <div class="fs-info-item">
-            <div class="fs-info-label">Radios</div>
-            <div class="fs-info-val" style="font-size:12px">
-              ${totalCOM ? `<span style="color:#1A5276;font-weight:700">${totalCOM} COM</span> ` : ''}
-              ${totalCRS ? `<span style="color:#922B21;font-weight:700">${totalCRS} CRS</span> ` : ''}
-              ${totalCMV ? `<span style="color:#1E8449;font-weight:700">${totalCMV} CMV</span>` : ''}
-              ${!totalCOM && !totalCRS && !totalCMV ? '—' : ''}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    ${comms.length ? `
-    <!-- COMMENTAIRES REFERANT -->
-    <div class="fs-section">
-      <div class="fs-section-header">📝 Commentaires pour le référant</div>
-      <div class="fs-section-body">
-        <ul class="fs-comm-list">
-          ${comms.map(c => `<li>${c}</li>`).join('')}
-        </ul>
-      </div>
-    </div>` : ''}
-
-    <!-- POINTS SIGNALEURS -->
-    <div class="fs-section">
-      <div class="fs-section-header">🗺 Points Signaleurs (${rows.length})</div>
-      <div class="fs-section-body" style="padding:0">`;
-
-  if (rows.length === 0) {
-    html += `<div class="fs-empty">Aucun PS saisi pour ce secteur ce jour.</div>`;
-  } else {
-    html += `
-        <table class="fs-table">
-          <thead>
-            <tr>
-              <th>PS / Lieu-dit</th>
-              <th>H MeP</th>
-              <th>Véh A</th>
-              <th>Véh B</th>
-              <th>Bénévoles</th>
-              <th>Radios</th>
-              <th>Course(s)</th>
-              <th>Km Ravit.</th>
-              <th>Km Atelier</th>
-              <th>Observations</th>
-            </tr>
-          </thead>
-          <tbody>`;
-
-    rows.forEach(r => {
-      const benvs = [r.b1,r.b2,r.b3,r.b4,r.b5].filter(Boolean).join('<br>');
-      const radios = [
-        r.com ? `<span class="fs-radio-pill com">${r.com} COM</span>` : '',
-        r.crs ? `<span class="fs-radio-pill crs">${r.crs} CRS</span>` : '',
-        r.cmv ? `<span class="fs-radio-pill cmv">${r.cmv} CMV</span>` : '',
-      ].join('');
-      const courses = coursesForPS(r.ps, jourId)
-        .map(c => `<span class="fs-course-tag">${c}</span>`).join('');
-      const kmRavit  = r.kmRavit  || '<span style="color:#ccc">—</span>';
-      const kmAtelier = r.kmAtelier || '<span style="color:#ccc">—</span>';
-
-      html += `
-            <tr>
-              <td><strong>${r.ps}</strong></td>
-              <td><strong style="color:#C0392B">${r.hmep || '—'}</strong></td>
-              <td>${r.vehA || '—'}</td>
-              <td>${r.vehB || '—'}</td>
-              <td>${benvs || '—'}</td>
-              <td>${radios || '—'}</td>
-              <td>${courses || '—'}</td>
-              <td>${kmRavit}</td>
-              <td>${kmAtelier}</td>
-              <td style="font-size:11px;color:#555">${r.obs || ''}</td>
-            </tr>`;
-    });
-
-    html += `</tbody></table>`;
-  }
-
-  html += `
-      </div>
-    </div>
-
-    <!-- MISSIONS -->
-    <div class="fs-section">
-      <div class="fs-section-header">🚨 Missions & Urgences</div>
-      <div class="fs-section-body" style="font-size:12px;color:#333;line-height:1.7">
-        • Guider les coureurs sur le parcours<br>
-        • Signaler les incidents sur le parcours<br>
-        • <strong>En cas d'accident : contacter le PC ROC sur RADIO COURSE</strong>
-      </div>
-    </div>
-
-    <button class="btn-fiche-print" onclick="imprimerFicheSecteur()">🖨 Imprimer cette fiche</button>
-  `;
-
-  body.innerHTML = html;
-}
-
-
-// ========================================================
-// APPS SCRIPT — Connexion Google Sheets
-// Remplacer l'URL après déploiement (étape 4 du guide)
-// ========================================================
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3-9qOcnRxX29beMLYWvaelrdwPK1eI4eGJKOfI4MUub0f99Bq1JTUHdtPYl4Qv432/exec';
-const SHEETS_ENABLED  = APPS_SCRIPT_URL !== 'REMPLACER_PAR_URL_APPS_SCRIPT';
-
-// ── Appel Apps Script via JSONP (contourne les limitations CORS/redirect) ──
-function callAS(params) {
-  return new Promise((resolve, reject) => {
-    const cbName = 'cb_' + Math.random().toString(36).slice(2);
-    const timeout = setTimeout(() => {
-      delete window[cbName];
-      reject(new Error('Timeout'));
-    }, 15000);
-    window[cbName] = (data) => {
-      clearTimeout(timeout);
-      delete window[cbName];
-      resolve(data);
-    };
-    const qs = new URLSearchParams({ ...params, callback: cbName });
-    const s  = document.createElement('script');
-    s.src    = `${APPS_SCRIPT_URL}?${qs}`;
-    s.onerror = () => { clearTimeout(timeout); delete window[cbName]; reject(new Error('Script error')); };
-    document.head.appendChild(s);
-    setTimeout(() => s.remove(), 20000);
-  });
-}
-
-// Charge les référentiels depuis Sheets au démarrage
-async function loadReferentiels() {
-  if (!SHEETS_ENABLED) return;
-  try {
-    showLoadingBanner('Chargement des référentiels depuis Google Sheets…');
-    const json = await callAS({ action: 'getReferentiels', jour: currentJour });
-    if (!json.ok) throw new Error(json.error);
-    const d = json.data;
-
-    // Mise à jour des listes dynamiques
-    BENEVOLES.length = 0;
-    d.benevoles.forEach(b => BENEVOLES.push(b.nom));
-
-    // Référants : depuis REF_Referents (d.referants) si disponible, sinon depuis secteurs
-    REFERANTS.length = 0;
-    if (d.referants && d.referants.length) {
-      d.referants.forEach(r => REFERANTS.push({ nom: r.nom, tel: r.tel || '' }));
-    } else if (d.secteurs && d.secteurs.length) {
-      const seen = new Set();
-      d.secteurs.forEach(s => {
-        if (s.referant && !seen.has(s.referant)) {
-          seen.add(s.referant);
-          REFERANTS.push({ nom: s.referant, tel: s.tel || '' });
-        }
-      });
-    }
-
-    if (d.ps && d.ps.length) {
-      Object.keys(PS_SECTEUR).forEach(k => delete PS_SECTEUR[k]);
-      d.ps.forEach(p => {
-        if (!PS_SECTEUR[p.secteur]) PS_SECTEUR[p.secteur] = [];
-        PS_SECTEUR[p.secteur].push(`${p.num} - ${p.lieudit}`);
-      });
-    }
-    if (d.courses && d.courses.length) {
-      Object.keys(COURSES).forEach(k => delete COURSES[k]);
-      d.courses.forEach(c => {
-        COURSES[c.nom] = { jours: c.jours, ps: c.ps, couleur: c.couleur };
-      });
-    }
-    hideLoadingBanner();
-    // Re-render complet pour que les listes déroulantes (référants, PS) soient à jour
-    renderAll();
-    toast('Référentiels chargés depuis Sheets ✓');
-  } catch(e) {
-    hideLoadingBanner();
-    toast('Mode hors-ligne (Sheets inaccessible)', 'warn');
-    console.warn('Sheets error:', e);
+    massifLayer.addTo(map);
+    massifVisible = true;
+    btn.classList.add('active');
   }
 }
 
-// Charge la saisie existante d'un jour depuis Sheets
-async function loadSaisieFromSheets(jour) {
-  if (!SHEETS_ENABLED) return;
-  try {
-    showLoadingBanner(`Chargement saisie ${jour} depuis Google Sheets…`);
-    const [jsonSaisie, jsonComm] = await Promise.all([
-      callAS({ action: 'getSaisie', jour }),
-      callAS({ action: 'getCommentaires', jour }),
-    ]);
-    hideLoadingBanner();
-    if (!jsonSaisie.ok) {
-      console.warn('getSaisie error:', jsonSaisie.error);
-      return; // silencieux — pas d'erreur affichée si Sheets vide
-    }
-    if (jsonSaisie.data && jsonSaisie.data.length) {
-      state[jour] = jsonSaisie.data.map(s => ({
-        secteur:      s.secteur,
-        referant:     s.referant,
-        hmepSect:     s.hmepSect,
-        collapsed:    false,
-        commentaires: jsonComm.ok && jsonComm.data && jsonComm.data[s.secteur]
-                        ? jsonComm.data[s.secteur] : ['','',''],
-        rows:         s.rows.map(r => ({ ...r })),
-      }));
-      renderAll();
-      toast(`Saisie ${jour} chargée depuis Sheets ✓`);
-    } else {
-      // Sheets vide pour ce jour — normal, pas d'erreur
-      console.log(`Sheets : aucune saisie pour ${jour}`);
-    }
-  } catch(e) {
-    hideLoadingBanner();
-    console.warn('Sheets load error:', e); // silencieux — on garde le localStorage
-  }
-}
+// --- CARROYAGE DFCI ----------------------------------------------------------
+var dfciLayer   = null;
+var dfciVisible = false;
 
-// Sauvegarde vers Sheets via JSONP — un secteur à la fois pour rester sous la limite URL
-async function saveToSheets() {
-  try { localStorage.setItem('ra2026_saisie', JSON.stringify(state)); } catch(e) {}
-  if (!SHEETS_ENABLED) { toast('Brouillon local sauvegardé ✓'); return; }
+function buildDFCILayer() {
+  var lg = L.layerGroup();
+  var zoom = map.getZoom();
 
-  const btn = document.querySelector('.btn-pdf');
-  if (btn) { btn.textContent = '⏳ Envoi…'; btn.disabled = true; }
-
-  try {
-    const secteurs = state[currentJour] || [];
-    let totalUpdated = 0, totalInserted = 0;
-
-    // Sauvegarde secteur par secteur (évite la limite de longueur d'URL)
-    for (const s of secteurs) {
-      // 1. Lignes PS du secteur
-      const jsonSaisie = await callAS({
-        action: 'saveSaisie',
-        jour: currentJour,
-        data: JSON.stringify([s]), // un seul secteur à la fois
-      });
-      if (!jsonSaisie.ok) throw new Error(jsonSaisie.error);
-      totalUpdated  += jsonSaisie.data.updated  || 0;
-      totalInserted += jsonSaisie.data.inserted || 0;
-
-      // 2. Commentaires du secteur
-      if (s.commentaires && s.commentaires.some(Boolean)) {
-        await callAS({
-          action: 'saveCommentaires',
-          jour: currentJour,
-          secteur: s.secteur,
-          data: JSON.stringify(s.commentaires),
-        });
-      }
-    }
-
-    toast(`Sheets mis à jour ✓  (${totalUpdated} modifiés, ${totalInserted} nouveaux)`);
-  } catch(e) {
-    toast('Erreur envoi Sheets — brouillon local conservé', 'err');
-    console.error('Sheets save error:', e);
-  } finally {
-    if (btn) { btn.textContent = '💾 Sauvegarder'; btn.disabled = false; }
-  }
-}
-
-// Bannière de chargement
-function showLoadingBanner(msg) {
-  let el = document.getElementById('loadingBanner');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'loadingBanner';
-    el.style.cssText = `position:fixed;top:0;left:0;right:0;z-index:500;
-      background:rgba(15,52,96,0.95);color:#fff;text-align:center;
-      padding:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;
-      letter-spacing:1px;border-bottom:2px solid #C0392B;`;
-    document.body.prepend(el);
-  }
-  el.textContent = '⏳ ' + msg;
-  el.style.display = 'block';
-}
-function hideLoadingBanner() {
-  const el = document.getElementById('loadingBanner');
-  if (el) el.style.display = 'none';
-}
-
-// ========================================================
-// SAVE (localStorage + Sheets)
-// ========================================================
-function saveDraft() { saveToSheets(); }
-
-function loadDraft() {
-  try {
-    const saved = localStorage.getItem('ra2026_saisie');
-    if (saved) {
-      state = JSON.parse(saved);
-      toast('Brouillon chargé');
-    }
-  } catch(e) {}
-}
-
-// ========================================================
-// COURSES HELPERS
-// ========================================================
-function renderCoursePills(psStr, jourId) {
-  const courses = getCoursesForPS(psStr, jourId);
-  if (!courses.length) return '<span class="course-none">—</span>';
-  return courses.map(name => {
-    const c = COURSES[name];
-    const bg = c ? c.couleur : '#555';
-    return `<span class="course-pill" style="background:${bg}22;color:${bg};border:1px solid ${bg}55">${name}</span>`;
-  }).join('');
-}
-
-function refreshCoursePills(si, ri, psVal) {
-  const cell = document.getElementById(`course-${si}-${ri}`);
-  if (cell) cell.innerHTML = renderCoursePills(psVal, currentJour);
-}
-
-function openCourses() {
-  const body = document.getElementById('coursesPanelBody');
-  body.innerHTML = '';
-
-  // Stat: how many PS assigned per course this jour
-  const sects = state[currentJour] || [];
-  const assignedPS = new Set();
-  sects.forEach(s => s.rows.forEach(r => { if (r.ps) assignedPS.add(r.ps); }));
-
-  Object.entries(COURSES).forEach(([name, c]) => {
-    const isActiveJour = c.jours.includes(currentJour);
-    const jourBadges = JOURS.map(j =>
-      `<span class="course-jour-badge ${c.jours.includes(j.id) && j.id === currentJour ? 'active-jour' : (c.jours.includes(j.id) ? '' : 'inactive')}"
-        style="${c.jours.includes(j.id) ? '' : 'opacity:0.3'}">${j.label}</span>`
-    ).join('');
-
-    const psTags = c.ps.map(num => {
-      // find matching PS string in PS_SECTEUR
-      const allPS = Object.values(PS_SECTEUR).flat();
-      const match = allPS.find(s => s.startsWith(num + ' ') || s.startsWith(num + '&') || s === String(num));
-      const label = match || String(num);
-      const isAssigned = [...assignedPS].some(s => {
-        const nums = (s || '').match(/\d+/g);
-        return nums && nums.map(Number).includes(num);
-      });
-      return `<span class="course-ps-item ${isAssigned ? 'assigned' : ''}">${label}</span>`;
-    }).join('');
-
-    const totalPS = c.ps.length;
-    const coveredPS = c.ps.filter(num => {
-      return [...assignedPS].some(s => {
-        const nums = (s || '').match(/\d+/g);
-        return nums && nums.map(Number).includes(num);
-      });
-    }).length;
-
-    body.insertAdjacentHTML('beforeend', `
-      <div class="course-card" style="border-color:${c.couleur}44">
-        <div class="course-card-header" style="background:${c.couleur}22;color:${c.couleur}">
-          <span>🏁 ${name}</span>
-          <div class="course-jours">${jourBadges}</div>
-        </div>
-        <div class="course-ps-list">${psTags}</div>
-        <div class="course-summary">
-          ${isActiveJour
-            ? `Couverture <strong>${currentJour}</strong> : <strong style="color:${coveredPS===totalPS?'var(--vert)':'var(--orange)'}">${coveredPS}/${totalPS} PS</strong> assignés`
-            : `⚠ Cette course n'est pas active sur <strong>${currentJour}</strong>`
+  if (zoom >= 12) {
+    // Mailles 2km avec popup subdivision 1km au clic
+    if (typeof DFCI_2KM !== 'undefined' && DFCI_2KM !== null) {
+      L.geoJSON(DFCI_2KM, {
+        style: function() {
+          return { color:'#e8a020', weight:1.2, fillOpacity:0, opacity:0.75 };
+        },
+        onEachFeature: function(feature, layer) {
+          var code = feature.properties.c;
+          var cx   = feature.properties.cx;
+          var cy   = feature.properties.cy;
+          // Label centré
+          if (cx && cy) {
+            L.marker([cy, cx], {
+              icon: L.divIcon({
+                className: 'dfci-label-2km',
+                html: code,
+                iconSize: [70,14], iconAnchor: [35,7]
+              }),
+              interactive: false, keyboard: false
+            }).addTo(lg);
           }
-        </div>
-      </div>
-    `);
-  });
+          // Clic : detecter la zone 1km selon position exacte du clic
+          layer.on('click', function(e) {
+            var clickLat = e.latlng.lat;
+            var clickLon = e.latlng.lng;
+            var bounds   = layer.getBounds();
+            var minLat   = bounds.getSouth();
+            var maxLat   = bounds.getNorth();
+            var minLon   = bounds.getWest();
+            var maxLon   = bounds.getEast();
+            var midLat   = (minLat + maxLat) / 2;
+            var midLon   = (minLon + maxLon) / 2;
 
-  document.getElementById('coursesOverlay').classList.add('active');
+            // Zone centrale = 33% autour du centre
+            var marginLat = (maxLat - minLat) * 0.25;
+            var marginLon = (maxLon - minLon) * 0.25;
+            var isCenter  = (clickLat > midLat - marginLat && clickLat < midLat + marginLat &&
+                             clickLon > midLon - marginLon && clickLon < midLon + marginLon);
+
+            var zone, label, color;
+            if (isCenter) {
+              zone  = '.5';
+              label = 'Centre';
+              color = '#ffc832';
+            } else if (clickLat >= midLat && clickLon <= midLon) {
+              zone  = '.1';
+              label = 'Haut Gauche';
+              color = '#e8a020';
+            } else if (clickLat >= midLat && clickLon > midLon) {
+              zone  = '.2';
+              label = 'Haut Droit';
+              color = '#e8a020';
+            } else if (clickLat < midLat && clickLon <= midLon) {
+              zone  = '.4';
+              label = 'Bas Gauche';
+              color = '#e8a020';
+            } else {
+              zone  = '.3';
+              label = 'Bas Droit';
+              color = '#e8a020';
+            }
+
+            var zoneCode = code + zone;
+            var html =
+              '<div style="text-align:center;padding:4px 0;">' +
+              '<div style="font-size:22px;font-weight:700;color:' + color + ';letter-spacing:1px;margin-bottom:4px;">' + zoneCode + '</div>' +
+              '<div style="font-size:12px;color:#8a9bb0;margin-bottom:8px;">' + label + ' - 1km x 1km</div>' +
+              '<div style="font-size:10px;color:#4a5a6a;border-top:1px solid #2a3040;padding-top:6px;">' + code + ' (carreau 2km)</div>' +
+              '</div>';
+            L.popup({ className:'custom-popup', maxWidth:200 })
+              .setLatLng(e.latlng)
+              .setContent(html)
+              .openOn(map);
+          });
+        }
+      }).addTo(lg);
+    }
+
+  } else {
+    // Zoom large : mailles 20km
+    if (typeof DFCI_20KM !== 'undefined') {
+      L.geoJSON(DFCI_20KM, {
+        style: function() {
+          return { color:'#e8a020', weight:2.5, fillOpacity:0.05, fillColor:'#e8a020', opacity:0.9 };
+        },
+        onEachFeature: function(feature, layer) {
+          var code = feature.properties.c;
+          layer.bindTooltip(code, {permanent:true, direction:'center', className:'dfci-tooltip-10km'});
+        }
+      }).addTo(lg);
+    }
+  }
+  return lg;
+}
+function toggleDFCI() {
+  var btn = document.getElementById('btn-dfci');
+  if (dfciVisible) {
+    if (dfciLayer) map.removeLayer(dfciLayer);
+    dfciLayer = null;
+    dfciVisible = false;
+    btn.classList.remove('active');
+  } else {
+    dfciLayer = buildDFCILayer();
+    dfciLayer.addTo(map);
+    dfciVisible = true;
+    btn.classList.add('active');
+  }
 }
 
-function closeCourses() {
-  document.getElementById('coursesOverlay').classList.remove('active');
-}
-
-// ========================================================
-// TOAST
-// ========================================================
-function toast(msg, type = 'ok') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast show ${type === 'warn' ? 'warn' : type === 'err' ? 'err' : ''}`;
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-// ========================================================
-// INIT
-// ========================================================
-initState();
-loadDraft(); // fallback localStorage
-
-// Charge depuis Sheets si URL configurée
-loadReferentiels().then(() => {
-  renderAll();
-  loadSaisieFromSheets(currentJour);
+// Reconstruire la couche DFCI au changement de zoom
+map.on('zoomend', function() {
+  if (dfciVisible) {
+    map.removeLayer(dfciLayer);
+    dfciLayer = buildDFCILayer();
+    dfciLayer.addTo(map);
+  }
 });
 
-// Quand on change de jour, recharge depuis Sheets
-const _switchJourOrig = switchJour;
-switchJour = function(jid) {
-  currentJour = jid;
-  renderAll();
-  // Recharger référentiels filtrés pour ce jour (bénévoles + PS disponibles)
-  loadReferentiels().then(() => {
-    loadSaisieFromSheets(jid);
+// --- ICÔNES VÉHICULES --------------------------------------------------------
+function makeIcon(type, statut) {
+  const colors = { '4x4':'#4caf50', 'eau':'#42a5f5', 'cmd':'#ef9a9a' };
+  const emojis = { '4x4':'🚙', 'eau':'🚒', 'cmd':'\u2B50' };
+  const col = statut === 'hs' ? '#607d8b' : statut === 'attente' ? '#ff9800' : colors[type];
+  const em  = emojis[type];
+  const sz  = type === 'cmd' ? 40 : 34;
+  const html = `
+    <div style="
+      width:${sz}px;height:${sz}px;
+      background:${col}22;
+      border:2.5px solid ${col};
+      border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:${type==='cmd'?18:15}px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.5),0 0 0 3px ${col}33;
+      position:relative;
+    ">
+      ${em}
+      <div style="
+        position:absolute;bottom:-2px;right:-2px;
+        width:10px;height:10px;border-radius:50%;
+        background:${statut==='patrouille'?'#4caf50':statut==='attente'?'#ff9800':'#607d8b'};
+        border:1.5px solid #13181f;
+      "></div>
+    </div>`;
+  return L.divIcon({ html, className:'', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2] });
+}
+
+// --- MARQUEURS ---------------------------------------------------------------
+const clusterGroup = L.markerClusterGroup({
+  maxClusterRadius: 50,
+  iconCreateFunction: cluster => {
+    const n = cluster.getChildCount();
+    return L.divIcon({
+      html:`<div style="width:38px;height:38px;background:#e85d2622;border:2px solid #e85d26;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:#e85d26;">${n}</div>`,
+      className:'', iconSize:[38,38], iconAnchor:[19,19]
+    });
+  }
+});
+
+const markers = {};
+
+vehicules.forEach(v => {
+  var bgColor   = v.type==='4x4' ? '#1a3a1a' : v.type==='eau' ? '#1a2a3a' : '#3a1a1a';
+  var typeIcon  = v.type==='4x4' ? '&#x1F699;' : v.type==='eau' ? '&#x1F692;' : '&#x2B50;';
+  var typeLabel = v.type==='4x4' ? '4x4 / VLTT' : v.type==='eau' ? 'Porteur eau / CCF' : 'Commandement';
+  var statClass = v.statut==='patrouille' ? 'green' : v.statut==='attente' ? 'orange' : '';
+  var statLabel = v.statut==='patrouille' ? 'En patrouille' : v.statut==='attente' ? 'En attente' : 'Hors service';
+  var statDot   = v.statut==='patrouille' ? '&#x1F7E2;' : v.statut==='attente' ? '&#x1F7E1;' : '&#x1F534;';
+
+  var popup = '<div class="popup-inner">'
+    + '<div class="popup-header">'
+    + '<div class="popup-icon" style="background:' + bgColor + '">' + typeIcon + '</div>'
+    + '<div><div class="popup-title">' + v.nom + '</div>'
+    + '<div class="popup-sub">' + typeLabel + ' - ' + v.secteur + '</div></div>'
+    + '</div>'
+    + '<div class="popup-row"><span class="lbl">Equipe</span><span class="val">' + v.equipe + '</span></div>'
+    + '<div class="popup-row"><span class="lbl">Statut</span><span class="val ' + statClass + '">' + statDot + ' ' + statLabel + '</span></div>'
+    + '<div class="popup-row"><span class="lbl">Vitesse</span><span class="val">' + v.vitesse + ' km/h</span></div>'
+    + '<div class="popup-row"><span class="lbl">MAJ</span><span class="val">' + v.heure + '</span></div>'
+    + '<div class="popup-row"><span class="lbl">Position</span><span class="val" style="font-size:11px;">' + v.lat.toFixed(4) + 'N ' + v.lng.toFixed(4) + 'E</span></div>'
+    + '</div>';
+
+  var marker = L.marker([v.lat, v.lng], { icon: makeIcon(v.type, v.statut) })
+    .bindPopup(popup, { className: 'custom-popup', maxWidth: 280 })
+    .on('click', function(){ selectVehicle(v.id); });
+
+  markers[v.id] = { marker: marker, data: v };
+  clusterGroup.addLayer(marker);
+});
+
+clusterGroup.addTo(map);
+
+// --- LISTE SIDEBAR ------------------------------------------------------------
+function renderList(filter) {
+  if (!filter) filter = 'tous';
+  var list = document.getElementById('vehicle-list');
+  list.innerHTML = '';
+  var filtered = filter === 'tous' ? vehicules : vehicules.filter(function(v){ return v.secteur === filter; });
+  filtered.forEach(function(v) {
+    var statusDot = v.statut === 'patrouille' ? 'dot-green' : v.statut === 'attente' ? 'dot-orange' : 'dot-gray';
+    var statusTxt = v.statut === 'patrouille' ? 'En patrouille' : v.statut === 'attente' ? 'En attente' : 'Hors service';
+    var statusCol = v.statut === 'patrouille' ? '#4caf50' : v.statut === 'attente' ? '#ff9800' : '#607d8b';
+    var badge    = v.type === '4x4' ? 'badge-4x4' : v.type === 'eau' ? 'badge-eau' : 'badge-cmd';
+    var badgeTxt = v.type === '4x4' ? '4X4' : v.type === 'eau' ? 'CCF' : 'CMD';
+    var typeIcon = v.type === '4x4' ? '&#x1F699;' : v.type === 'eau' ? '&#x1F692;' : '&#x2B50;';
+    var speedStr = v.vitesse > 0 ? '<span style="color:#6a7a8a;margin-left:auto;">' + v.vitesse + ' km/h</span>' : '';
+    var div = document.createElement('div');
+    div.className = 'vehicle-item';
+    div.id = 'vi-' + v.id;
+    div.innerHTML = '<div class="vi-top">'
+      + '<div class="vi-name">' + typeIcon + ' ' + v.nom
+      + ' <span class="vi-badge ' + badge + '">' + badgeTxt + '</span></div>'
+      + '</div>'
+      + '<div class="vi-sub">' + v.secteur + ' - ' + v.equipe + '</div>'
+      + '<div class="vi-status" style="margin-top:3px;">'
+      + '<div class="' + statusDot + '"></div>'
+      + '<span style="color:' + statusCol + '">' + statusTxt + '</span>'
+      + speedStr
+      + '</div>';
+    div.onclick = function(){ selectVehicle(v.id); };
+    list.appendChild(div);
   });
+}
+function selectVehicle(id) {
+  document.querySelectorAll('.vehicle-item').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById(`vi-${id}`);
+  if (el) { el.classList.add('selected'); el.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+  const m = markers[id];
+  if (m) {
+    map.setView([m.data.lat, m.data.lng], 13, { animate: true });
+    clusterGroup.zoomToShowLayer(m.marker, () => m.marker.openPopup());
+  }
+}
+
+function filterBySecteur(val) {
+  renderList(val);
+}
+
+renderList();
+
+// --- HORLOGE -----------------------------------------------------------------
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toTimeString().slice(0,8);
+  document.getElementById('date-display').textContent =
+    now.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// --- TRACCAR GPS TEMPS REEL -------------------------------------------------
+var TRACCAR_URL   = 'https://demo3.traccar.org';
+var TRACCAR_TOKEN = 'RzBFAiEAzcAWsjsHy53V77Fhz_sLF9NaLxnoYxuT21igqFtqLGsCID5yxLTD-6VP3EYC1jos4nu4M6ZzwBl_VlwSt1RzlI2LeyJpIjo3MTY5MDE5MzIzODEwNDUxNjU5LCJ1Ijo2NTAzLCJlIjoiMjAyNi0wNC0wOFQyMjowMDowMC4wMDArMDA6MDAifQ';
+var TRACCAR_DEVICES = {
+  75864832: { nom:'Smartphone_GG', type:'cmd', secteur:'Maures' }
 };
+var traccarActif = false;
 
-// Close overlays on background click
-document.getElementById('reportOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeReport();
-});
-document.getElementById('coursesOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeCourses();
-});
-document.getElementById('ficheSectOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeFicheSecteur();
-});
+function fetchTraccar() {
+  fetch(TRACCAR_URL + '/api/positions', {
+    headers: {
+      'Authorization': 'Bearer ' + TRACCAR_TOKEN,
+      'Accept': 'application/json'
+    }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
+  .then(function(positions) {
+    if (!positions || positions.length === 0) return;
+    traccarActif = true;
+    // Mettre a jour le badge statut
+    var pill = document.querySelector('.status-pill');
+    if (pill) {
+      pill.style.background = '#1a3a1a';
+      pill.style.borderColor = '#2d7a2d';
+      pill.style.color = '#4caf50';
+      pill.innerHTML = 'GPS TEMPS REEL - demo3.traccar.org';
+    }
+    positions.forEach(function(pos) {
+      var devId  = pos.deviceId;
+      var lat    = pos.latitude;
+      var lon    = pos.longitude;
+      var speed  = Math.round((pos.speed || 0) * 1.852); // noeuds -> km/h
+      var heure  = new Date(pos.fixTime || pos.serverTime).toTimeString().slice(0,5);
+      var info   = TRACCAR_DEVICES[devId];
+      if (!info) {
+        // Device inconnu - l'ajouter dynamiquement
+        info = { nom:'Device-' + devId, type:'4x4', secteur:'Var' };
+        TRACCAR_DEVICES[devId] = info;
+      }
+      // Trouver le vehicule correspondant dans notre tableau
+      var found = false;
+      for (var i=0; i<vehicules.length; i++) {
+        if (vehicules[i].traccarId === devId) {
+          vehicules[i].lat     = lat;
+          vehicules[i].lng     = lon;
+          vehicules[i].vitesse = speed;
+          vehicules[i].heure   = heure;
+          vehicules[i].statut  = speed > 2 ? 'patrouille' : 'attente';
+          if (markers[vehicules[i].id]) {
+            markers[vehicules[i].id].marker.setLatLng([lat, lon]);
+          }
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        // Creer un nouveau vehicule pour ce device Traccar
+        var newId = 100 + devId % 1000;
+        var newVeh = {
+          id: newId, nom: info.nom, type: info.type,
+          secteur: info.secteur, lat: lat, lng: lon,
+          statut: speed > 2 ? 'patrouille' : 'attente',
+          vitesse: speed, equipe: 'GPS Live', heure: heure,
+          traccarId: devId
+        };
+        vehicules.push(newVeh);
+        // Creer le marqueur
+        var bgColor   = newVeh.type==='4x4' ? '#1a3a1a' : newVeh.type==='eau' ? '#1a2a3a' : '#3a1a1a';
+        var typeIcon  = newVeh.type==='4x4' ? '&#x1F699;' : newVeh.type==='eau' ? '&#x1F692;' : '&#x2B50;';
+        var typeLabel = newVeh.type==='4x4' ? '4x4 / VLTT' : newVeh.type==='eau' ? 'Porteur eau / CCF' : 'Commandement';
+        var popup = '<div class="popup-inner">'
+          + '<div class="popup-header">'
+          + '<div class="popup-icon" style="background:' + bgColor + '">' + typeIcon + '</div>'
+          + '<div><div class="popup-title">' + newVeh.nom + ' <span style="color:#4caf50;font-size:10px;">LIVE</span></div>'
+          + '<div class="popup-sub">' + typeLabel + ' - ' + newVeh.secteur + '</div></div>'
+          + '</div>'
+          + '<div class="popup-row"><span class="lbl">Statut</span><span class="val green">GPS temps reel</span></div>'
+          + '<div class="popup-row"><span class="lbl">Vitesse</span><span class="val">' + speed + ' km/h</span></div>'
+          + '<div class="popup-row"><span class="lbl">MAJ</span><span class="val">' + heure + '</span></div>'
+          + '</div>';
+        var mkr = L.marker([lat, lon], { icon: makeIcon(newVeh.type, newVeh.statut) })
+          .bindPopup(popup, { className:'custom-popup', maxWidth:280 })
+          .on('click', function(){ selectVehicle(newId); });
+        markers[newId] = { marker: mkr, data: newVeh };
+        clusterGroup.addLayer(mkr);
+        // Centrer la carte sur la premiere position reelle
+        map.setView([lat, lon], 13, { animate: true });
+      }
+    });
+    // Mettre a jour compteurs
+    updateStats();
+    renderList(document.getElementById('secteur-filter').value);
+  })
+  .catch(function(err) {
+    console.warn('Traccar fetch erreur:', err.message);
+  });
+}
+
+function updateStats() {
+  var actif   = vehicules.filter(function(v){return v.statut==='patrouille';}).length;
+  var attente = vehicules.filter(function(v){return v.statut==='attente';}).length;
+  var hs      = vehicules.filter(function(v){return v.statut==='hs';}).length;
+  document.getElementById('stat-total').textContent  = vehicules.length;
+  document.getElementById('stat-actif').textContent  = actif;
+  document.getElementById('stat-attente').textContent = attente;
+  document.getElementById('stat-hs').textContent     = hs;
+}
+
+// Demarrer le polling Traccar toutes les 30s
+fetchTraccar();
+setInterval(fetchTraccar, 30000);
+
+// --- SIMULATION MOUVEMENT (fallback si pas de Traccar) ----------------------
+setInterval(function() {
+  if (traccarActif) return; // Traccar actif = pas de simulation
+  vehicules.forEach(function(v) {
+    if (v.traccarId) return; // Ne pas simuler les vrais devices
+    if (v.statut === 'patrouille' && v.vitesse > 0) {
+      v.lat += (Math.random() - 0.5) * 0.004;
+      v.lng += (Math.random() - 0.5) * 0.004;
+      v.vitesse = Math.max(5, Math.min(65, v.vitesse + (Math.random()-0.5)*8));
+      v.heure = new Date().toTimeString().slice(0,5);
+      if (markers[v.id]) {
+        markers[v.id].marker.setLatLng([v.lat, v.lng]);
+      }
+    }
+  });
+  renderList(document.getElementById('secteur-filter').value);
+}, 5000);
 </script>
 </body>
 </html>
-
