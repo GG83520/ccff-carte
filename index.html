@@ -481,14 +481,79 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 20px;
+    gap: 10px;
+    padding: 0 12px;
   }
 
-  #dfci-search-box {
+  .dfci-search-box {
     position: relative;
-    width: 100%;
-    max-width: 380px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
+
+  .dfci-search-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    border: 1px solid;
+  }
+
+  .dfci-search-label.s1 { color:#ff4444; border-color:#ff4444; background:rgba(255,68,68,0.12); }
+  .dfci-search-label.s2 { color:#4488ff; border-color:#4488ff; background:rgba(68,136,255,0.12); }
+
+  .dfci-search-input {
+    width: 148px;
+    background: #2a3245;
+    border: 2px solid #4a5570;
+    border-radius: 5px;
+    color: #ffffff;
+    padding: 5px 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.2s;
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .dfci-search-input.s1:focus { border-color:#ff4444; }
+  .dfci-search-input.s2:focus { border-color:#4488ff; }
+  .dfci-search-input::placeholder { color:#7a8aaa; text-transform:none; letter-spacing:0; font-style:italic; font-size:11px; }
+
+  .dfci-search-btn {
+    border: none; border-radius: 5px; color: white;
+    padding: 5px 9px; font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    transition: filter 0.15s; flex-shrink: 0;
+  }
+  .dfci-search-btn.s1 { background:#cc2222; }
+  .dfci-search-btn.s1:hover { filter:brightness(1.2); }
+  .dfci-search-btn.s2 { background:#2255cc; }
+  .dfci-search-btn.s2:hover { filter:brightness(1.2); }
+
+  .dfci-clear-btn {
+    background: #1a1f2e; border: 1px solid #3a4050;
+    border-radius: 5px; color: #8a9bb0;
+    padding: 5px 8px; font-size: 12px;
+    cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+  }
+  .dfci-clear-btn:hover { border-color:#ef5350; color:#ef5350; }
+
+  .dfci-suggestions {
+    position: absolute; left: 0; right: 0; top: 34px;
+    background: #13181f; border: 1px solid #2a3040;
+    border-radius: 5px; z-index: 2000;
+    max-height: 180px; overflow-y: auto;
+    display: none; box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    min-width: 200px;
+  }
+  .dfci-suggestions::-webkit-scrollbar { width:4px; }
+  .dfci-suggestions::-webkit-scrollbar-thumb { background:#2a3040; }
   #dfci-search-wrap { display:flex; gap:6px; margin-bottom:0; }
   #dfci-search-input {
     flex:1; background:#2a3245; border:2px solid #4a5570;
@@ -636,15 +701,25 @@
     <h1>CCFF VAR - <span>SURVEILLANCE FEUX DE FORÊT</span></h1>
   </div>
   <div id="header-center">
-    <div id="dfci-search-box">
-      <div id="dfci-search-wrap">
-        <input id="dfci-search-input" type="text" placeholder="Ex: LD42G6 ou LD42G6.2"
-               maxlength="12" autocomplete="off" autocorrect="off" spellcheck="false"/>
-        <button id="dfci-search-btn" onclick="dfciSearch()">&#128269; GO</button>
-        <button id="dfci-clear-btn" onclick="dfciClear()" title="Effacer la recherche">&#10005;</button>
-      </div>
-      <div id="dfci-suggestions"></div>
-      <div id="dfci-search-result"></div>
+    <!-- Recherche 1 : Rouge -->
+    <div class="dfci-search-box">
+      <span class="dfci-search-label s1">S1</span>
+      <input class="dfci-search-input s1" id="dfci-input-1" type="text"
+             placeholder="LD42G6 ou .2" maxlength="12"
+             autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <button class="dfci-search-btn s1" onclick="dfciSearch(1)">GO</button>
+      <button class="dfci-clear-btn"     onclick="dfciClear(1)"  title="Effacer S1">&#10005;</button>
+      <div class="dfci-suggestions" id="dfci-sugg-1"></div>
+    </div>
+    <!-- Recherche 2 : Bleu -->
+    <div class="dfci-search-box">
+      <span class="dfci-search-label s2">S2</span>
+      <input class="dfci-search-input s2" id="dfci-input-2" type="text"
+             placeholder="LD42G6 ou .2" maxlength="12"
+             autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <button class="dfci-search-btn s2" onclick="dfciSearch(2)">GO</button>
+      <button class="dfci-clear-btn"     onclick="dfciClear(2)"  title="Effacer S2">&#10005;</button>
+      <div class="dfci-suggestions" id="dfci-sugg-2"></div>
     </div>
   </div>
   <div id="header-right">
@@ -1216,23 +1291,30 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 1000);
 
-// --- RECHERCHE DFCI ---------------------------------------------------------
-var dfciSearchMarker = null;
-var dfciHighlight    = null;
+// --- RECHERCHE DFCI (double) ------------------------------------------------
+var COULEURS = {
+  1: { fill:'#ff4444', marker:'#ff4444', label:'S1' },
+  2: { fill:'#4488ff', marker:'#4488ff', label:'S2' }
+};
 
-var ZONE_LABELS = { '.1':'Haut Gauche', '.2':'Haut Droit', '.3':'Bas Droit',
-                    '.4':'Bas Gauche',  '.5':'Centre' };
+var dfciState = {
+  1: { marker: null, highlight: null },
+  2: { marker: null, highlight: null }
+};
+
+var ZONE_LABELS = {
+  '.1':'Haut Gauche', '.2':'Haut Droit',
+  '.3':'Bas Droit',   '.4':'Bas Gauche', '.5':'Centre'
+};
 
 function dfciParseCode(raw) {
-  // Nettoyer et parser le code saisi
   var s = raw.trim().toUpperCase().replace(/\s/g,'');
-  // Formats acceptés : LD42 / LD42G6 / LD42G6.2
-  var m20  = s.match(/^([A-Z]{2}\d{2})$/);            // maille 20km
-  var m2   = s.match(/^([A-Z]{2}\d{2}[A-J]\d)$/);   // carreau 2km
-  var m1   = s.match(/^([A-Z]{2}\d{2}[A-J]\d)\.([1-5])$/); // zone 1km
-  if (m1)  return { type:'1km', code2: m1[1], zone: '.' + m1[2], full: s };
-  if (m2)  return { type:'2km', code2: m2[1], full: s };
-  if (m20) return { type:'20km', code20: m20[1], full: s };
+  var m20 = s.match(/^([A-Z]{2}\d{2})$/);
+  var m2  = s.match(/^([A-Z]{2}\d{2}[A-J]\d)$/);
+  var m1  = s.match(/^([A-Z]{2}\d{2}[A-J]\d)\.([1-5])$/);
+  if (m1)  return { type:'1km',  code2:m1[1], zone:'.'+m1[2], full:s };
+  if (m2)  return { type:'2km',  code2:m2[1], full:s };
+  if (m20) return { type:'20km', code20:m20[1], full:s };
   return null;
 }
 
@@ -1260,57 +1342,51 @@ function dfciZoneCenter(feat, zone) {
   var minLat=Math.min.apply(null,lats), maxLat=Math.max.apply(null,lats);
   var midLon=(minLon+maxLon)/2, midLat=(minLat+maxLat)/2;
   var centers = {
-    '.1': [(midLat+maxLat)/2, (minLon+midLon)/2],
-    '.2': [(midLat+maxLat)/2, (midLon+maxLon)/2],
-    '.3': [(minLat+midLat)/2, (midLon+maxLon)/2],
-    '.4': [(minLat+midLat)/2, (minLon+midLon)/2],
-    '.5': [midLat, midLon]
+    '.1':[(midLat+maxLat)/2,(minLon+midLon)/2],
+    '.2':[(midLat+maxLat)/2,(midLon+maxLon)/2],
+    '.3':[(minLat+midLat)/2,(midLon+maxLon)/2],
+    '.4':[(minLat+midLat)/2,(minLon+midLon)/2],
+    '.5':[midLat,midLon]
   };
-  return centers[zone] || [midLat, midLon];
+  return centers[zone] || [midLat,midLon];
 }
 
-function dfciClear() {
-  document.getElementById('dfci-search-input').value = '';
-  document.getElementById('dfci-search-result').textContent = '';
-  document.getElementById('dfci-search-result').style.display = 'none';
-  document.getElementById('dfci-suggestions').style.display = 'none';
-  dfciClearSearch();
+function dfciClearSearch(n) {
+  if (dfciState[n].marker)    { map.removeLayer(dfciState[n].marker);    dfciState[n].marker=null; }
+  if (dfciState[n].highlight) { map.removeLayer(dfciState[n].highlight); dfciState[n].highlight=null; }
 }
 
-function dfciClearSearch() {
-  if (dfciSearchMarker) { map.removeLayer(dfciSearchMarker); dfciSearchMarker=null; }
-  if (dfciHighlight)    { map.removeLayer(dfciHighlight);    dfciHighlight=null; }
+function dfciClear(n) {
+  document.getElementById('dfci-input-'+n).value = '';
+  document.getElementById('dfci-sugg-'+n).style.display = 'none';
+  dfciClearSearch(n);
 }
 
-function dfciSearch() {
-  var raw    = document.getElementById('dfci-search-input').value;
-  var result = document.getElementById('dfci-search-result');
+function dfciSearch(n) {
+  var raw    = document.getElementById('dfci-input-'+n).value;
   var parsed = dfciParseCode(raw);
-  dfciClearSearch();
-  document.getElementById('dfci-suggestions').style.display = 'none';
+  var col    = COULEURS[n];
+  dfciClearSearch(n);
+  document.getElementById('dfci-sugg-'+n).style.display = 'none';
 
-  if (!parsed) {
-    result.className = 'dfci-result-err';
-    result.textContent = 'Format invalide. Ex: LD42G6 ou LD42G6.2'; result.style.display='block'; setTimeout(function(){result.style.display='none';},3000);
-    return;
-  }
+  if (!parsed) return;
 
   if (parsed.type === '20km') {
     var f20 = dfciFindFeature20km(parsed.code20);
-    if (!f20) { result.className='dfci-result-err'; result.textContent='Maille '+parsed.code20+' non trouvée dans le Var'; return; }
-    var cx=f20.properties.cx, cy=f20.properties.cy;
-    map.setView([cy,cx], 11, {animate:true});
-    dfciHighlight = L.geoJSON(f20, {style:{color:'#ff4444',weight:3,fillColor:'#ff4444',fillOpacity:0.15}}).addTo(map);
-    result.className='dfci-result-ok'; result.textContent='Maille 20km '+parsed.code20+' localisee';
+    if (!f20) return;
+    map.setView([f20.properties.cy, f20.properties.cx], 11, {animate:true});
+    dfciState[n].highlight = L.geoJSON(f20, {
+      style:{color:col.fill, weight:3, fillColor:col.fill, fillOpacity:0.15}
+    }).addTo(map);
+    if (!dfciVisible) toggleDFCI();
     return;
   }
 
   var feat = dfciFindFeature2km(parsed.code2);
-  if (!feat) { result.className='dfci-result-err'; result.textContent='Carreau '+parsed.code2+' non trouve dans le Var'; return; }
+  if (!feat) return;
 
-  // Surligner le carreau 2km
-  dfciHighlight = L.geoJSON(feat, {
-    style:{color:'#ff4444',weight:2.5,fillColor:'#ff4444',fillOpacity:0.15}
+  dfciState[n].highlight = L.geoJSON(feat, {
+    style:{color:col.fill, weight:2.5, fillColor:col.fill, fillOpacity:0.15}
   }).addTo(map);
 
   var center, popupTxt, zoom;
@@ -1318,83 +1394,71 @@ function dfciSearch() {
     center = [feat.properties.cy, feat.properties.cx];
     zoom   = 13;
     popupTxt = '<div style="text-align:center;padding:4px;">'
-      + '<div style="font-size:20px;font-weight:700;color:#e8a020;">'+parsed.code2+'</div>'
+      + '<div style="font-size:20px;font-weight:700;color:'+col.fill+';">'+parsed.code2+'</div>'
       + '<div style="font-size:11px;color:#8a9bb0;margin-top:4px;">Carreau 2km x 2km</div>'
+      + '<div style="font-size:10px;color:'+col.fill+';margin-top:3px;font-weight:700;">'+col.label+'</div>'
       + '</div>';
   } else {
-    var zonePos = dfciZoneCenter(feat, parsed.zone);
-    center  = zonePos;
-    zoom    = 14;
+    center = dfciZoneCenter(feat, parsed.zone);
+    zoom   = 14;
     var zlab = ZONE_LABELS[parsed.zone] || '';
     popupTxt = '<div style="text-align:center;padding:4px;">'
-      + '<div style="font-size:20px;font-weight:700;color:#e8a020;">'+parsed.full+'</div>'
+      + '<div style="font-size:20px;font-weight:700;color:'+col.fill+';">'+parsed.full+'</div>'
       + '<div style="font-size:12px;color:#8a9bb0;margin-top:2px;">'+zlab+' - 1km x 1km</div>'
       + '<div style="font-size:10px;color:#4a5a6a;margin-top:4px;">'+parsed.code2+' (carreau 2km)</div>'
+      + '<div style="font-size:10px;color:'+col.fill+';margin-top:3px;font-weight:700;">'+col.label+'</div>'
       + '</div>';
   }
 
   map.setView(center, zoom, {animate:true});
-
-  // Activer la couche DFCI si pas active
   if (!dfciVisible) toggleDFCI();
 
-  dfciSearchMarker = L.marker(center, {
+  dfciState[n].marker = L.marker(center, {
     icon: L.divIcon({
-      className: 'dfci-search-marker',
-      html: '<div style="width:24px;height:24px;background:#ff4444;border:3px solid white;'
-          + 'border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.6);'
-          + 'animation:blink 1s infinite;"></div>',
-      iconSize:[24,24], iconAnchor:[12,12]
+      className: '',
+      html: '<div style="width:22px;height:22px;background:'+col.marker+';border:3px solid white;'
+          + 'border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.6);"></div>',
+      iconSize:[22,22], iconAnchor:[11,11]
     })
   }).addTo(map);
 
-  dfciSearchMarker.bindPopup(popupTxt, {className:'custom-popup', maxWidth:220}).openPopup();
-  result.className='dfci-result-ok';
-  result.textContent = parsed.full + ' localise';
+  dfciState[n].marker.bindPopup(popupTxt, {className:'custom-popup', maxWidth:220}).openPopup();
 }
 
-// Autocompletion
-document.addEventListener('DOMContentLoaded', function() {
-  var inp  = document.getElementById('dfci-search-input');
-  var sugg = document.getElementById('dfci-suggestions');
+// Autocompletion pour les 2 champs
+function initAutoComplete(n) {
+  var inp  = document.getElementById('dfci-input-'+n);
+  var sugg = document.getElementById('dfci-sugg-'+n);
+  if (!inp) return;
 
   inp.addEventListener('input', function() {
     var val = inp.value.trim().toUpperCase().replace(/\s/g,'');
-    sugg.innerHTML = '';
-    sugg.style.display = 'none';
+    sugg.innerHTML = ''; sugg.style.display='none';
     if (val.length < 2) return;
-
     var matches = [];
-
-    // Chercher dans 20km
     if (DFCI_20KM && val.length <= 4) {
       DFCI_20KM.features.forEach(function(f) {
-        if (f.properties.c.startsWith(val)) matches.push({code: f.properties.c, type:'Maille 20km'});
+        if (f.properties.c.startsWith(val)) matches.push({code:f.properties.c, type:'Maille 20km'});
       });
     }
-
-    // Chercher dans 2km
     if (DFCI_2KM && val.length >= 4) {
-      // Extraire le prefixe 2km (sans la zone .x)
-      var base = val.replace(/\.\d$/, '');
+      var base = val.replace(/\.\d$/,'');
       var count = 0;
       for (var i=0; i<DFCI_2KM.features.length && count<8; i++) {
         var c = DFCI_2KM.features[i].properties.c;
         if (c.startsWith(base)) {
-          matches.push({code: c, type:'Carreau 2km'});
-          // Ajouter aussi les zones .1-.5 si code complet
+          matches.push({code:c, type:'Carreau 2km'});
           if (val.length >= 6 && c === base) {
             ['.1','.2','.3','.4','.5'].forEach(function(z) {
-              matches.push({code: c+z, type:'Zone 1km - '+ZONE_LABELS[z]});
+              matches.push({code:c+z, type:'Zone 1km - '+ZONE_LABELS[z]});
             });
           }
           count++;
         }
       }
     }
-
-    if (matches.length === 0) return;
-    sugg.style.display = 'block';
+    if (matches.length===0) return;
+    sugg.style.display='block';
     matches.slice(0,10).forEach(function(m) {
       var div = document.createElement('div');
       div.className = 'dfci-suggestion';
@@ -1402,25 +1466,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     + '<span class="dfci-sug-type">'+m.type+'</span>';
       div.onclick = function() {
         inp.value = m.code;
-        sugg.style.display = 'none';
-        dfciSearch();
+        sugg.style.display='none';
+        dfciSearch(n);
       };
       sugg.appendChild(div);
     });
   });
 
   inp.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { dfciSearch(); sugg.style.display='none'; }
-    if (e.key === 'Escape') sugg.style.display = 'none';
+    if (e.key==='Enter')  { dfciSearch(n); sugg.style.display='none'; }
+    if (e.key==='Escape') sugg.style.display='none';
   });
+}
 
+document.addEventListener('DOMContentLoaded', function() {
+  initAutoComplete(1);
+  initAutoComplete(2);
   document.addEventListener('click', function(e) {
-    if (!document.getElementById('dfci-search-box').contains(e.target)) {
-      sugg.style.display = 'none';
-    }
+    [1,2].forEach(function(n) {
+      var box = document.querySelectorAll('.dfci-search-box')[n-1];
+      if (box && !box.contains(e.target)) {
+        var sugg = document.getElementById('dfci-sugg-'+n);
+        if (sugg) sugg.style.display='none';
+      }
+    });
   });
 });
-
 
 // --- MODE DEMO / EXPLOITATION -----------------------------------------------
 var PIN_CODE  = '1234';   // <- changer ici pour personnaliser
