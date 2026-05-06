@@ -635,7 +635,8 @@
     </div>
   </div>
   <div id="header-right">
-    <div class="status-pill">PROTOTYPE • DONNÉES SIMULÉES</div>
+    <button id="mode-btn" onclick="toggleModeDemo()">&#9881; MODE DEMO</button>
+    <div class="status-pill" id="proto-pill">PROTOTYPE &#8226; DONNEES SIMULEES</div>
     <div>
       <div id="clock">--:--:--</div>
       <div id="date-display">Chargement...</div>
@@ -1136,7 +1137,9 @@ vehicules.forEach(v => {
     .on('click', function(){ selectVehicle(v.id); });
 
   markers[v.id] = { marker: marker, data: v };
-  clusterGroup.addLayer(marker);
+  // En mode exploitation (défaut), ne pas afficher les véhicules simulés
+  // Ils seront ajoutés au cluster quand le mode DEMO est activé
+  // clusterGroup.addLayer(marker);  <- différé à appliquerMode()
 });
 
 clusterGroup.addTo(map);
@@ -1403,32 +1406,42 @@ var PIN_CODE  = '1234';   // <- changer ici pour personnaliser
 var modeDemo  = false;
 
 function appliquerMode() {
-  var sidebar  = document.getElementById('sidebar');
-  var pill     = document.querySelector('.status-pill');
-  var btn      = document.getElementById('mode-btn');
+  var sidebar = document.getElementById('sidebar');
+  var pill    = document.getElementById('proto-pill');
+  var btn     = document.getElementById('mode-btn');
+  if (!btn) return;
 
   if (modeDemo) {
-    // MODE DEMO : tout visible
+    // ── MODE DEMO : tout visible ──────────────────────────────────────
     sidebar.style.display = 'flex';
     if (pill) pill.style.display = 'flex';
-    btn.textContent  = '✖ MODE EXPLOITATION';
+    btn.innerHTML = '&#10006; EXPLOITATION';
     btn.classList.add('demo-actif');
-    btn.title = 'Cliquer pour revenir en mode Exploitation';
-    // Réactiver la simulation
+    btn.title = 'Revenir en mode Exploitation';
     simulationActive = true;
-  } else {
-    // MODE EXPLOITATION : sidebar masquée, pas de simulation, pas de badge proto
-    sidebar.style.display = 'none';
-    if (pill) pill.style.display = 'none';
-    btn.textContent  = '⚙ MODE DEMO';
-    btn.classList.remove('demo-actif');
-    btn.title = 'Activer le mode démonstration';
-    // Désactiver la simulation
-    simulationActive = false;
-    // Masquer les véhicules simulés (garder seulement les GPS réels)
+    // Ajouter les vehicules simules au cluster
     vehicules.forEach(function(v) {
       if (!v.traccarId && markers[v.id]) {
-        clusterGroup.removeLayer(markers[v.id].marker);
+        if (!clusterGroup.hasLayer(markers[v.id].marker)) {
+          clusterGroup.addLayer(markers[v.id].marker);
+        }
+      }
+    });
+    renderList(document.getElementById('secteur-filter').value);
+  } else {
+    // ── MODE EXPLOITATION : carte epuree ─────────────────────────────
+    sidebar.style.display = 'none';
+    if (pill) pill.style.display = 'none';
+    btn.innerHTML = '&#9881; MODE DEMO';
+    btn.classList.remove('demo-actif');
+    btn.title = 'Activer le mode demonstration (PIN requis)';
+    simulationActive = false;
+    // Retirer les vehicules simules du cluster
+    vehicules.forEach(function(v) {
+      if (!v.traccarId && markers[v.id]) {
+        if (clusterGroup.hasLayer(markers[v.id].marker)) {
+          clusterGroup.removeLayer(markers[v.id].marker);
+        }
       }
     });
   }
@@ -1453,12 +1466,6 @@ function pinValider() {
   if (saisi === PIN_CODE) {
     document.getElementById('pin-overlay').classList.remove('visible');
     modeDemo = true;
-    // Ré-afficher les véhicules simulés
-    vehicules.forEach(function(v) {
-      if (!v.traccarId && markers[v.id]) {
-        clusterGroup.addLayer(markers[v.id].marker);
-      }
-    });
     appliquerMode();
   } else {
     document.getElementById('pin-error').textContent = 'Code incorrect — réessayer';
@@ -1479,7 +1486,8 @@ var simulationActive = false;  // Désactivée par défaut (mode exploitation)
 
 // Initialiser en mode exploitation au chargement
 window.addEventListener('load', function() {
-  appliquerMode();
+  // Appliquer le mode après initialisation complete
+  setTimeout(function() { appliquerMode(); }, 500);
 });
 
 // --- TRACCAR GPS TEMPS REEL -------------------------------------------------
