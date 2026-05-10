@@ -1171,6 +1171,13 @@ map.on('zoomend', function() {
     dfciLayer = buildDFCILayer();
     dfciLayer.addTo(map);
   }
+  // ── F1 : adapter l'opacité du remplissage commune au niveau de zoom ──
+  var opacity = communeFillOpacity(map.getZoom());
+  [1, 2].forEach(function(n) {
+    if (dfciState[n].commune) {
+      dfciState[n].commune.setStyle({ fillOpacity: opacity });
+    }
+  });
 });
 
 // ── F1 : effacer contours communes au clic carte (hors marqueur/popup) ──
@@ -1323,14 +1330,26 @@ var COULEURS = {
 };
 
 var dfciState = {
-  1: { marker: null, highlight: null, commune: null, communeLabel: null },
-  2: { marker: null, highlight: null, commune: null, communeLabel: null }
+  1: { marker: null, highlight: null, commune: null, communeLabel: null, communeColor: null },
+  2: { marker: null, highlight: null, commune: null, communeLabel: null, communeColor: null }
 };
+
+// ── F1 : opacité remplissage commune selon zoom ────────────────────────────
+// zoom 8-9 → 0.30 (vue large, commune = repère visuel fort)
+// zoom 10-11 → 0.20 (vue dept, équilibre)
+// zoom 12-13 → 0.12 (vue locale, lisibilité fond prioritaire)
+// zoom 14+   → 0.06 (très zoomé, fond carte prime)
+function communeFillOpacity(zoom) {
+  if (zoom <= 9)  return 0.30;
+  if (zoom <= 11) return 0.20;
+  if (zoom <= 13) return 0.12;
+  return 0.06;
+}
 
 // ── F1 : Fetch contour commune depuis API geo.gouv.fr ──────────────────────
 var COULEURS_COMMUNE = {
-  1: '#ff3333',   // rouge pour S1 (cohérent avec label S1)
-  2: '#a8d8ff'    // bleu clair pour S2
+  1: '#ff3333',   // rouge pour S1
+  2: '#1a6ecc'    // bleu foncé pour S2
 };
 
 function fetchCommune(n, lat, lon) {
@@ -1348,18 +1367,19 @@ function fetchCommune(n, lat, lon) {
       var nomComm = feat.properties.nom || '';
       var col     = COULEURS_COMMUNE[n];
 
-      // Contour pointillé — weight épais et interactive:false pour ne pas intercepter les clics
+      // Contour pointillé — fillOpacity adaptatif selon zoom (géré par zoomend)
       dfciState[n].commune = L.geoJSON(feat, {
         style: {
           color:       col,
           weight:      3,
           dashArray:   '8,6',
           fillColor:   col,
-          fillOpacity: 0.5,
+          fillOpacity: communeFillOpacity(map.getZoom()),
           opacity:     1,
           interactive: false
         }
       }).addTo(map);
+      dfciState[n].communeColor = col;  // mémoriser pour zoom adaptatif
 
       // Passer au-dessus de tous les autres layers (tuiles, highlights, etc.)
       dfciState[n].commune.bringToFront();
