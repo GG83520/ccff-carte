@@ -1333,7 +1333,7 @@ var COULEURS_COMMUNE = {
   2: '#a8d8ff'    // bleu clair pour S2
 };
 
-function fetchCommune(n, lat, lon, popupRef) {
+function fetchCommune(n, lat, lon) {
   // Effacer l'ancien contour commune de ce slot
   if (dfciState[n].commune)      { map.removeLayer(dfciState[n].commune);      dfciState[n].commune=null; }
   if (dfciState[n].communeLabel) { map.removeLayer(dfciState[n].communeLabel); dfciState[n].communeLabel=null; }
@@ -1348,22 +1348,26 @@ function fetchCommune(n, lat, lon, popupRef) {
       var nomComm = feat.properties.nom || '';
       var col     = COULEURS_COMMUNE[n];
 
-      // Contour pointillé
+      // Contour pointillé — weight épais et interactive:false pour ne pas intercepter les clics
       dfciState[n].commune = L.geoJSON(feat, {
         style: {
           color:       col,
-          weight:      2,
-          dashArray:   '6,5',
+          weight:      3,
+          dashArray:   '8,6',
           fillColor:   col,
-          fillOpacity: 0.07,
-          opacity:     0.9
+          fillOpacity: 0.08,
+          opacity:     1,
+          interactive: false
         }
       }).addTo(map);
 
+      // Passer au-dessus de tous les autres layers (tuiles, highlights, etc.)
+      dfciState[n].commune.bringToFront();
+
       // Label centré sur la commune
       var bounds = dfciState[n].commune.getBounds();
-      var center = bounds.getCenter();
-      dfciState[n].communeLabel = L.marker([center.lat, center.lng], {
+      var ctr    = bounds.getCenter();
+      dfciState[n].communeLabel = L.marker([ctr.lat, ctr.lng], {
         icon: L.divIcon({
           className: 'commune-label',
           html: nomComm,
@@ -1371,25 +1375,32 @@ function fetchCommune(n, lat, lon, popupRef) {
           iconAnchor: null
         }),
         interactive: false,
-        keyboard: false
+        keyboard:    false
       }).addTo(map);
 
-      // Injecter le nom de commune dans le popup DFCI déjà ouvert
-      if (popupRef && popupRef.isOpen()) {
-        var container = popupRef.getElement();
-        if (container) {
-          var existing = container.querySelector('.commune-row');
-          if (!existing) {
-            var inner = container.querySelector('.popup-inner') || container.querySelector('div');
-            if (inner) {
-              var row = document.createElement('div');
-              row.className = 'commune-row';
-              row.style.cssText = 'border-top:1px solid #2a3040;margin-top:6px;padding-top:6px;text-align:center;';
-              row.innerHTML = '<span style="font-size:10px;color:#6a7a8a;">COMMUNE</span>'
-                + '<div style="font-size:14px;font-weight:700;color:' + col + ';letter-spacing:0.5px;margin-top:2px;">'
-                + nomComm + '</div>';
-              inner.appendChild(row);
+      // Injecter le nom dans le popup DFCI — on interroge le marker stocké dans dfciState
+      // Le popup est peut-être ouvert ou pas, on injecte dans le DOM s'il est présent
+      var mkr = dfciState[n].marker;
+      if (mkr) {
+        var popup = mkr.getPopup();
+        // Mettre à jour le contenu texte du popup avec la commune
+        if (popup) {
+          var currentContent = popup.getContent();
+          // Vérifier qu'on n'a pas déjà injecté
+          if (typeof currentContent === 'string' && currentContent.indexOf('commune-row') === -1) {
+            var communeBlock = '<div class="commune-row" style="border-top:1px solid #2a3040;margin-top:8px;padding-top:8px;text-align:center;">'
+              + '<span style="font-size:10px;color:#6a7a8a;letter-spacing:1px;text-transform:uppercase;">Commune</span>'
+              + '<div style="font-size:15px;font-weight:700;color:' + col + ';letter-spacing:0.5px;margin-top:3px;">'
+              + nomComm + '</div></div>';
+            // Injecter avant la fermeture du div principal
+            var newContent = currentContent.replace('</div>\n</div>', communeBlock + '</div>\n</div>');
+            if (newContent === currentContent) {
+              // fallback : ajouter à la fin du dernier div
+              newContent = currentContent.slice(0, currentContent.lastIndexOf('</div>'))
+                + communeBlock + '</div>';
             }
+            popup.setContent(newContent);
+            // Si le popup est ouvert, le DOM se rafraîchit automatiquement
           }
         }
       }
@@ -1524,7 +1535,7 @@ function dfciSearch(n) {
   dfciState[n].marker.bindPopup(popupTxt, {className:'custom-popup', maxWidth:220}).openPopup();
 
   // ── F1 : charger et afficher le contour de la commune ──
-  fetchCommune(n, center[0], center[1], dfciState[n].marker.getPopup());
+  fetchCommune(n, center[0], center[1]);
 }
 
 // Autocompletion pour les 2 champs
