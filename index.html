@@ -1329,7 +1329,7 @@ var dfciState = {
 
 // ── F1 : Fetch contour commune depuis API geo.gouv.fr ──────────────────────
 var COULEURS_COMMUNE = {
-  1: '#ffd166',   // jaune chaud pour S1
+  1: '#ff3333',   // rouge pour S1 (cohérent avec label S1)
   2: '#a8d8ff'    // bleu clair pour S2
 };
 
@@ -1355,7 +1355,7 @@ function fetchCommune(n, lat, lon) {
           weight:      3,
           dashArray:   '8,6',
           fillColor:   col,
-          fillOpacity: 0.08,
+          fillOpacity: 0.5,
           opacity:     1,
           interactive: false
         }
