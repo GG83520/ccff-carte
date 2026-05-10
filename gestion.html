@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCFF Var - Gestion Opérationnelle</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: #0d1117;
+    color: #e0e0e0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  #header {
+    background: linear-gradient(135deg, #1a1f2e 0%, #151922 100%);
+    border-bottom: 2px solid #e85d26;
+    padding: 0 16px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  #header-left { display: flex; align-items: center; gap: 14px; }
+  .header-logo {
+    width: 34px; height: 34px; background: #e85d26;
+    border-radius: 6px; display: flex; align-items: center;
+    justify-content: center; font-size: 18px;
+  }
+  #header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px; font-weight: 700; letter-spacing: 1px; color: #fff;
+  }
+  #header h1 span { color: #e85d26; }
+  #header-right { display: flex; align-items: center; gap: 16px; }
+  #clock {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 2px;
+  }
+  #date-display { font-size: 11px; color: #8a9bb0; text-align: right; line-height: 1.3; }
+
+  /* Pill sync */
+  .sync-pill {
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+    display: flex; align-items: center; gap: 6px; transition: all 0.3s;
+  }
+  .sync-pill.ok  { background:#1a3a1a; border:1px solid #2d7a2d; color:#4caf50; }
+  .sync-pill.off { background:#2a1a1a; border:1px solid #7a2d2d; color:#ef5350; }
+  .sync-pill::before {
+    content:''; width:7px; height:7px; border-radius:50%;
+    background: currentColor; animation: blink 1.5s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Lien carte */
+  #btn-carte {
+    background: transparent; border: 1px solid #3a4a6a;
+    border-radius: 5px; color: #8a9bb0;
+    padding: 4px 12px; font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    cursor: pointer; transition: all 0.2s; text-decoration: none;
+    text-transform: uppercase; display: flex; align-items: center; gap: 6px;
+  }
+  #btn-carte:hover { border-color: #e85d26; color: #e85d26; }
+
+  /* ── BANDEAU STATS ── */
+  #stats-bar {
+    background: #13181f;
+    border-bottom: 1px solid #1e2733;
+    padding: 8px 20px;
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .stat-chip {
+    background: #1a1f2e; border: 1px solid #1e2733;
+    border-radius: 6px; padding: 6px 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .stat-chip .val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 24px; font-weight: 700; line-height: 1;
+  }
+  .stat-chip .lbl { font-size: 10px; color: #6a7a8a; text-transform: uppercase; letter-spacing: 0.5px; }
+  .val-orange { color: #e85d26; }
+  .val-green  { color: #4caf50; }
+  .val-blue   { color: #42a5f5; }
+  .val-gray   { color: #607d8b; }
+
+  /* ── MAIN LAYOUT ── */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  /* ── COLONNE GAUCHE : Patrouilles ── */
+  #col-patrouilles {
+    width: 380px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #1e2733;
+    overflow: hidden;
+  }
+
+  .col-header {
+    background: #13181f;
+    border-bottom: 1px solid #1e2733;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .col-header h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; color: #e85d26; text-transform: uppercase;
+  }
+
+  /* Formulaire saisie patrouille */
+  #form-patrouille {
+    background: #0f1419;
+    border-bottom: 1px solid #1e2733;
+    padding: 12px 14px;
+    flex-shrink: 0;
+  }
+  .form-row {
+    display: flex; gap: 8px; margin-bottom: 8px; align-items: center;
+  }
+  .form-row:last-child { margin-bottom: 0; }
+  .form-label {
+    font-size: 11px; color: #6a7a8a; text-transform: uppercase;
+    letter-spacing: 0.5px; width: 60px; flex-shrink: 0;
+  }
+  .form-select, .form-input {
+    flex: 1; background: #1a1f2e; border: 1px solid #2a3040;
+    border-radius: 5px; color: #e0e0e0; padding: 5px 8px;
+    font-family: 'Barlow', sans-serif; font-size: 12px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .form-select:focus, .form-input:focus { border-color: #e85d26; }
+  .form-input::placeholder { color: #4a5a6a; font-style: italic; }
+  .btn-actif {
+    background: #1e7e34; border: none; border-radius: 5px;
+    color: white; padding: 6px 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: filter 0.15s;
+  }
+  .btn-actif:hover { filter: brightness(1.15); }
+  .btn-inactif {
+    background: #2a1a1a; border: 1px solid #7a2d2d;
+    border-radius: 5px; color: #ef9a9a; padding: 6px 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-inactif:hover { background: #7a2d2d; color: white; }
+
+  /* Liste patrouilles */
+  #liste-patrouilles {
+    flex: 1; overflow-y: auto; padding: 6px 0;
+  }
+  #liste-patrouilles::-webkit-scrollbar { width: 4px; }
+  #liste-patrouilles::-webkit-scrollbar-thumb { background: #2a3040; border-radius: 2px; }
+
+  .patrouille-item {
+    padding: 8px 14px;
+    border-left: 3px solid transparent;
+    border-bottom: 1px solid #1a1f2e;
+    transition: all 0.15s;
+  }
+  .patrouille-item.actif { border-left-color: #4caf50; background: #0f1f0f; }
+  .patrouille-item.inactif { border-left-color: #607d8b; opacity: 0.6; }
+
+  .pat-top {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 3px;
+  }
+  .pat-nom {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px; font-weight: 700; color: #fff;
+  }
+  .pat-commune {
+    font-size: 11px; color: #8a9bb0;
+  }
+  .pat-heure {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 600;
+  }
+  .pat-heure.actif  { color: #4caf50; }
+  .pat-heure.inactif { color: #607d8b; }
+  .pat-equipe { font-size: 11px; color: #6a7a8a; }
+
+  .pat-badge {
+    font-size: 9px; font-weight: 700; padding: 1px 6px;
+    border-radius: 3px; letter-spacing: 0.5px;
+  }
+  .badge-actif   { background: #1a3a1a; color: #4caf50; border: 1px solid #2d7a2d; }
+  .badge-inactif { background: #1a1f2e; color: #607d8b; border: 1px solid #2a3040; }
+
+  .pat-actions { display: flex; gap: 4px; }
+  .pat-btn {
+    font-size: 10px; padding: 2px 8px; border-radius: 3px;
+    cursor: pointer; font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600; border: 1px solid; transition: all 0.15s;
+  }
+  .pat-btn-actif  { background:#1a3a1a; color:#4caf50; border-color:#2d7a2d; }
+  .pat-btn-actif:hover  { background:#2d7a2d; color:#fff; }
+  .pat-btn-stop   { background:#2a1a1a; color:#ef9a9a; border-color:#7a2d2d; }
+  .pat-btn-stop:hover   { background:#7a2d2d; color:#fff; }
+
+  /* ── COLONNE DROITE : Log chantiers ── */
+  #col-log {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Toolbar log */
+  #log-toolbar {
+    background: #0f1419;
+    border-bottom: 1px solid #1e2733;
+    padding: 10px 14px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .log-input {
+    flex: 1; background: #1a1f2e; border: 1px solid #2a3040;
+    border-radius: 5px; color: #e0e0e0; padding: 6px 10px;
+    font-family: 'Barlow', sans-serif; font-size: 12px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .log-input:focus { border-color: #e85d26; }
+  .log-input::placeholder { color: #4a5a6a; font-style: italic; }
+  .log-type-select {
+    width: 140px; background: #1a1f2e; border: 1px solid #2a3040;
+    border-radius: 5px; color: #e0e0e0; padding: 6px 8px;
+    font-family: 'Barlow', sans-serif; font-size: 12px; outline: none;
+  }
+  .btn-log-add {
+    background: #e85d26; border: none; border-radius: 5px;
+    color: white; padding: 6px 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    white-space: nowrap; transition: filter 0.15s;
+  }
+  .btn-log-add:hover { filter: brightness(1.15); }
+  .btn-log-clear {
+    background: #1a1f2e; border: 1px solid #3a4050;
+    border-radius: 5px; color: #8a9bb0;
+    padding: 6px 10px; font-size: 12px; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn-log-clear:hover { border-color: #ef5350; color: #ef5350; }
+
+  /* Log entries */
+  #log-entries {
+    flex: 1; overflow-y: auto; padding: 8px 14px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  #log-entries::-webkit-scrollbar { width: 4px; }
+  #log-entries::-webkit-scrollbar-thumb { background: #2a3040; border-radius: 2px; }
+
+  .log-entry {
+    background: #13181f; border: 1px solid #1e2733;
+    border-radius: 6px; padding: 8px 12px;
+    display: flex; gap: 12px; align-items: flex-start;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+  .log-entry.type-info      { border-left: 3px solid #42a5f5; }
+  .log-entry.type-alerte    { border-left: 3px solid #ef5350; background: #1a1212; }
+  .log-entry.type-patrouille{ border-left: 3px solid #4caf50; }
+  .log-entry.type-vehicule  { border-left: 3px solid #e85d26; }
+  .log-entry.type-note      { border-left: 3px solid #ffd166; }
+
+  .log-time {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700; color: #8a9bb0;
+    white-space: nowrap; padding-top: 1px; min-width: 42px;
+  }
+  .log-icon { font-size: 16px; flex-shrink: 0; padding-top: 1px; }
+  .log-body { flex: 1; }
+  .log-type-label {
+    font-size: 9px; font-weight: 700; color: #6a7a8a;
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px;
+  }
+  .log-text { font-size: 13px; color: #e0e0e0; line-height: 1.4; }
+  .log-source { font-size: 10px; color: #4a5a6a; margin-top: 2px; }
+
+  /* Empty state */
+  .log-empty {
+    text-align: center; padding: 40px 20px;
+    color: #2a3040; font-size: 14px;
+  }
+  .log-empty div { font-size: 40px; margin-bottom: 10px; }
+
+  /* ── FOOTER ── */
+  #footer {
+    background: #13181f;
+    border-top: 1px solid #1e2733;
+    padding: 6px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  #footer-left  { font-size: 11px; color: #4a5a6a; }
+  #footer-right { font-size: 11px; color: #4a5a6a; }
+  #last-sync    { color: #8a9bb0; }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div id="header-left">
+    <div class="header-logo">🛡</div>
+    <h1>CCFF VAR - <span>GESTION OPÉRATIONNELLE</span></h1>
+  </div>
+  <div id="header-right">
+    <a href="index.html" id="btn-carte" target="_blank">🗺 ÉCRAN CARTE</a>
+    <div class="sync-pill off" id="sync-pill">EN ATTENTE CARTE</div>
+    <div>
+      <div id="clock">--:--:--</div>
+      <div id="date-display">Chargement...</div>
+    </div>
+  </div>
+</div>
+
+<!-- BANDEAU STATS -->
+<div id="stats-bar">
+  <div class="stat-chip">
+    <div><div class="val val-orange" id="stat-total">0</div><div class="lbl">Véhicules</div></div>
+  </div>
+  <div class="stat-chip">
+    <div><div class="val val-green"  id="stat-actif">0</div><div class="lbl">En patrouille</div></div>
+  </div>
+  <div class="stat-chip">
+    <div><div class="val val-blue"   id="stat-attente">0</div><div class="lbl">En attente</div></div>
+  </div>
+  <div class="stat-chip">
+    <div><div class="val val-gray"   id="stat-hs">0</div><div class="lbl">Hors service</div></div>
+  </div>
+  <div class="stat-chip" style="margin-left:auto;">
+    <div><div class="val val-green"  id="stat-pat-actif">0</div><div class="lbl">Patrouilles actives</div></div>
+  </div>
+  <div class="stat-chip">
+    <div><div class="val val-gray"   id="stat-pat-total">0</div><div class="lbl">Patrouilles totales</div></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- COL GAUCHE : Patrouilles -->
+  <div id="col-patrouilles">
+
+    <div class="col-header">
+      <h3>🚶 Patrouilles</h3>
+      <span style="font-size:11px;color:#6a7a8a;" id="pat-count">0 active(s)</span>
+    </div>
+
+    <!-- Formulaire ajout patrouille -->
+    <div id="form-patrouille">
+      <div class="form-row">
+        <span class="form-label">Commune</span>
+        <input class="form-input" id="pat-commune" type="text"
+               placeholder="Nom de la commune…" autocomplete="off"/>
+      </div>
+      <div class="form-row">
+        <span class="form-label">Équipe</span>
+        <input class="form-input" id="pat-equipe" type="text"
+               placeholder="Nom(s) du/des patrouilleurs…" autocomplete="off"/>
+      </div>
+      <div class="form-row">
+        <span class="form-label">N° Pat.</span>
+        <input class="form-input" id="pat-num" type="text"
+               placeholder="Ex : PAT-01" style="width:100px;flex:none;" autocomplete="off"/>
+        <div style="flex:1"></div>
+        <button class="btn-actif"   onclick="ajouterPatrouille('actif')">▶ ACTIVER</button>
+        <button class="btn-inactif" onclick="ajouterPatrouille('inactif')">■ INACTIF</button>
+      </div>
+    </div>
+
+    <!-- Liste patrouilles -->
+    <div id="liste-patrouilles">
+      <div class="log-empty" id="pat-empty">
+        <div>🚶</div>Aucune patrouille enregistrée
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COL DROITE : Log chantiers -->
+  <div id="col-log">
+    <div class="col-header">
+      <h3>📋 Journal de chantier</h3>
+      <span style="font-size:11px;color:#6a7a8a;" id="log-count">0 entrée(s)</span>
+    </div>
+
+    <div id="log-toolbar">
+      <select class="log-type-select" id="log-type">
+        <option value="info">ℹ️  Information</option>
+        <option value="patrouille">🚶 Patrouille</option>
+        <option value="vehicule">🚒 Véhicule</option>
+        <option value="alerte">🔴 Alerte</option>
+        <option value="note">📝 Note</option>
+      </select>
+      <input class="log-input" id="log-text" type="text"
+             placeholder="Saisir une entrée de journal…"
+             onkeydown="if(event.key==='Enter') ajouterLog()"/>
+      <button class="btn-log-add" onclick="ajouterLog()">+ AJOUTER</button>
+      <button class="btn-log-clear" onclick="effacerLog()">🗑 Vider</button>
+    </div>
+
+    <div id="log-entries">
+      <div class="log-empty" id="log-empty">
+        <div>📋</div>Journal vide — les événements apparaîtront ici
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div id="footer">
+  <div id="footer-left">CCFF VAR — Écran B Gestion — v1.0 — Prototype</div>
+  <div id="footer-right">Dernière sync : <span id="last-sync">—</span></div>
+</div>
+
+<script>
+'use strict';
+
+// ── ÉTAT LOCAL ───────────────────────────────────────────────────────────────
+var patrouilles = [];   // { id, num, commune, equipe, statut, heure }
+var logEntries  = [];   // { id, type, texte, heure, source }
+var statsVehicules = { total: 0, actif: 0, attente: 0, hs: 0 };
+
+// ── BROADCASTCHANNEL — canal partagé avec index.html ─────────────────────────
+var channel = null;
+var syncOk  = false;
+
+try {
+  channel = new BroadcastChannel('ccff-var');
+  channel.onmessage = function(evt) {
+    var msg = evt.data;
+    if (!msg || !msg.type) return;
+
+    if (msg.type === 'vehicules-update') {
+      // Mise à jour stats véhicules depuis la carte
+      statsVehicules = msg.stats || statsVehicules;
+      renderStats();
+      majSyncPill(true);
+    }
+    if (msg.type === 'patrouille-update') {
+      // La carte nous informe d'un changement de patrouille
+      // (bidirectionnel prévu en phase 2)
+    }
+    if (msg.type === 'ping') {
+      // La carte vérifie qu'on est là
+      channel.postMessage({ type: 'pong', source: 'gestion' });
+      majSyncPill(true);
+    }
+  };
+
+  // Annoncer notre présence à la carte
+  setTimeout(function() {
+    channel.postMessage({ type: 'gestion-ready' });
+  }, 500);
+
+} catch(e) {
+  console.warn('BroadcastChannel non supporté:', e);
+}
+
+function majSyncPill(ok) {
+  syncOk = ok;
+  var pill = document.getElementById('sync-pill');
+  if (ok) {
+    pill.className = 'sync-pill ok';
+    pill.textContent = 'SYNC CARTE OK';
+  } else {
+    pill.className = 'sync-pill off';
+    pill.textContent = 'EN ATTENTE CARTE';
+  }
+  document.getElementById('last-sync').textContent =
+    new Date().toTimeString().slice(0, 8);
+}
+
+// ── HORLOGE ──────────────────────────────────────────────────────────────────
+function updateClock() {
+  var now = new Date();
+  document.getElementById('clock').textContent = now.toTimeString().slice(0, 8);
+  document.getElementById('date-display').textContent =
+    now.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── STATS VÉHICULES ───────────────────────────────────────────────────────────
+function renderStats() {
+  document.getElementById('stat-total').textContent   = statsVehicules.total;
+  document.getElementById('stat-actif').textContent   = statsVehicules.actif;
+  document.getElementById('stat-attente').textContent = statsVehicules.attente;
+  document.getElementById('stat-hs').textContent      = statsVehicules.hs;
+  var actives = patrouilles.filter(function(p){ return p.statut === 'actif'; }).length;
+  document.getElementById('stat-pat-actif').textContent = actives;
+  document.getElementById('stat-pat-total').textContent = patrouilles.length;
+}
+
+// ── PATROUILLES ───────────────────────────────────────────────────────────────
+function ajouterPatrouille(statut) {
+  var commune = document.getElementById('pat-commune').value.trim();
+  var equipe  = document.getElementById('pat-equipe').value.trim();
+  var num     = document.getElementById('pat-num').value.trim();
+  if (!commune) { document.getElementById('pat-commune').focus(); return; }
+
+  var now = new Date().toTimeString().slice(0, 5);
+  var id  = Date.now();
+  var pat = {
+    id: id,
+    num: num || ('PAT-' + String(patrouilles.length + 1).padStart(2, '0')),
+    commune: commune,
+    equipe: equipe || '—',
+    statut: statut,
+    heure: now
+  };
+  patrouilles.unshift(pat);
+
+  // Reset formulaire
+  document.getElementById('pat-commune').value = '';
+  document.getElementById('pat-equipe').value  = '';
+  document.getElementById('pat-num').value     = '';
+
+  // Log automatique
+  ajouterLogAuto('patrouille',
+    (statut === 'actif' ? '▶ Patrouille ACTIVÉE' : '■ Patrouille INACTIF')
+    + ' — ' + pat.num + ' — ' + commune
+    + (equipe ? ' (' + equipe + ')' : ''),
+    'Formulaire Écran B'
+  );
+
+  renderPatrouilles();
+  diffuserPatrouilles();
+}
+
+function changerStatutPat(id, newStatut) {
+  var pat = patrouilles.find(function(p){ return p.id === id; });
+  if (!pat) return;
+  pat.statut = newStatut;
+  pat.heure  = new Date().toTimeString().slice(0, 5);
+  ajouterLogAuto('patrouille',
+    (newStatut === 'actif' ? '▶ Activation' : '■ Désactivation')
+    + ' — ' + pat.num + ' — ' + pat.commune,
+    'Écran B'
+  );
+  renderPatrouilles();
+  diffuserPatrouilles();
+}
+
+function supprimerPat(id) {
+  var idx = patrouilles.findIndex(function(p){ return p.id === id; });
+  if (idx === -1) return;
+  var pat = patrouilles[idx];
+  patrouilles.splice(idx, 1);
+  ajouterLogAuto('note', '🗑 Patrouille supprimée — ' + pat.num + ' — ' + pat.commune, 'Écran B');
+  renderPatrouilles();
+  diffuserPatrouilles();
+}
+
+function renderPatrouilles() {
+  var liste = document.getElementById('liste-patrouilles');
+  var empty = document.getElementById('pat-empty');
+  document.getElementById('pat-count').textContent =
+    patrouilles.filter(function(p){ return p.statut === 'actif'; }).length + ' active(s)';
+
+  if (patrouilles.length === 0) {
+    liste.innerHTML = '';
+    liste.appendChild(empty);
+    renderStats();
+    return;
+  }
+  if (empty.parentNode) empty.parentNode.removeChild(empty);
+
+  liste.innerHTML = patrouilles.map(function(pat) {
+    var isActif = pat.statut === 'actif';
+    return '<div class="patrouille-item ' + pat.statut + '">'
+      + '<div class="pat-top">'
+      +   '<div>'
+      +     '<span class="pat-nom">' + pat.num + '</span>'
+      +     ' <span class="pat-badge ' + (isActif ? 'badge-actif' : 'badge-inactif') + '">'
+      +       (isActif ? 'ACTIF' : 'INACTIF') + '</span>'
+      +   '</div>'
+      +   '<span class="pat-heure ' + pat.statut + '">' + pat.heure + '</span>'
+      + '</div>'
+      + '<div class="pat-commune">📍 ' + pat.commune + '</div>'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">'
+      +   '<span class="pat-equipe">👥 ' + pat.equipe + '</span>'
+      +   '<div class="pat-actions">'
+      +     (isActif
+          ? '<button class="pat-btn pat-btn-stop"  onclick="changerStatutPat(' + pat.id + ',\'inactif\')">■ STOP</button>'
+          : '<button class="pat-btn pat-btn-actif" onclick="changerStatutPat(' + pat.id + ',\'actif\')">▶ ACTIVER</button>')
+      +     '<button class="pat-btn" style="background:#1a1f2e;color:#6a7a8a;border-color:#2a3040;" onclick="supprimerPat(' + pat.id + ')">✕</button>'
+      +   '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+  renderStats();
+}
+
+// ── LOG CHANTIER ──────────────────────────────────────────────────────────────
+var LOG_ICONS = {
+  info:       'ℹ️',
+  patrouille: '🚶',
+  vehicule:   '🚒',
+  alerte:     '🔴',
+  note:       '📝'
+};
+
+function ajouterLog() {
+  var texte = document.getElementById('log-text').value.trim();
+  if (!texte) return;
+  var type = document.getElementById('log-type').value;
+  _pushLog(type, texte, 'Opérateur');
+  document.getElementById('log-text').value = '';
+}
+
+function ajouterLogAuto(type, texte, source) {
+  _pushLog(type, texte, source || 'Système');
+}
+
+function _pushLog(type, texte, source) {
+  var entry = {
+    id:     Date.now(),
+    type:   type,
+    texte:  texte,
+    heure:  new Date().toTimeString().slice(0, 8),
+    source: source
+  };
+  logEntries.unshift(entry);
+  renderLog();
+  // Diffuser vers la carte
+  if (channel) {
+    channel.postMessage({ type: 'log-update', entry: entry });
+  }
+}
+
+function renderLog() {
+  var container = document.getElementById('log-entries');
+  var empty     = document.getElementById('log-empty');
+  document.getElementById('log-count').textContent = logEntries.length + ' entrée(s)';
+
+  if (logEntries.length === 0) {
+    container.innerHTML = '';
+    container.appendChild(empty);
+    return;
+  }
+  if (empty.parentNode) empty.parentNode.removeChild(empty);
+
+  container.innerHTML = logEntries.map(function(e) {
+    return '<div class="log-entry type-' + e.type + '">'
+      + '<div class="log-time">' + e.heure.slice(0, 5) + '</div>'
+      + '<div class="log-icon">' + (LOG_ICONS[e.type] || 'ℹ️') + '</div>'
+      + '<div class="log-body">'
+      +   '<div class="log-type-label">' + e.type.toUpperCase() + '</div>'
+      +   '<div class="log-text">' + e.texte + '</div>'
+      +   '<div class="log-source">' + e.source + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function effacerLog() {
+  if (!confirm('Vider tout le journal de chantier ?')) return;
+  logEntries = [];
+  renderLog();
+}
+
+// ── DIFFUSION VERS LA CARTE (BroadcastChannel) ────────────────────────────────
+function diffuserPatrouilles() {
+  if (!channel) return;
+  channel.postMessage({
+    type: 'patrouilles-update',
+    patrouilles: patrouilles,
+    source: 'gestion'
+  });
+}
+
+// ── PING PERIODIQUE vers la carte (vérif sync) ───────────────────────────────
+setInterval(function() {
+  if (channel) channel.postMessage({ type: 'ping-gestion' });
+  // Si pas de réponse depuis 90s → sync perdue
+}, 30000);
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+renderPatrouilles();
+renderLog();
+renderStats();
+
+// Log de démarrage
+ajouterLogAuto('info', '🛡 Écran Gestion démarré — CCFF VAR', 'Système');
+</script>
+</body>
+</html>
