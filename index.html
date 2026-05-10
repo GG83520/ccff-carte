@@ -849,6 +849,30 @@
 </div>
 
 <script>
+// --- BROADCASTCHANNEL — déclaré EN PREMIER pour être prêt immédiatement ------
+var ccffChannel = null;
+var marqueursPatrouilles = {};
+
+try {
+  ccffChannel = new BroadcastChannel('ccff-var');
+  console.log('[BC] Canal ccff-var ouvert');
+  ccffChannel.onmessage = function(evt) {
+    var msg = evt.data;
+    console.log('[BC] Message reçu:', msg && msg.type);
+    if (!msg || !msg.type) return;
+    if (msg.type === 'gestion-ready' || msg.type === 'ping-gestion') {
+      diffuserStatsVehicules();
+      ccffChannel.postMessage({ type: 'ping', source: 'carte' });
+    }
+    if (msg.type === 'patrouilles-update') {
+      console.log('[F4] patrouilles-update reçu:', msg.patrouilles);
+      afficherMarqueursPatrouilles(msg.patrouilles || []);
+    }
+  };
+} catch(e) {
+  console.warn('[BC] BroadcastChannel non supporté:', e);
+}
+
 // --- DONNÉES VÉHICULES SIMULÉS -----------------------------------------------
 const vehicules = [
   // 4x4 / VLTT (vert)
@@ -1921,29 +1945,7 @@ fetchTraccar();
 setInterval(fetchTraccar, 30000);
 
 // --- BROADCASTCHANNEL — sync avec gestion.html --------------------------------
-var ccffChannel = null;
-try {
-  ccffChannel = new BroadcastChannel('ccff-var');
-  ccffChannel.onmessage = function(evt) {
-    var msg = evt.data;
-    if (!msg || !msg.type) return;
-
-    if (msg.type === 'gestion-ready' || msg.type === 'ping-gestion') {
-      // L'écran gestion est connecté — lui envoyer les stats actuelles
-      diffuserStatsVehicules();
-      if (ccffChannel) ccffChannel.postMessage({ type: 'ping', source: 'carte' });
-    }
-    if (msg.type === 'patrouilles-update') {
-      // Recevoir les patrouilles actives et afficher marqueurs communes sur carte
-      afficherMarqueursPatrouilles(msg.patrouilles || []);
-    }
-    if (msg.type === 'pong') {
-      // Gestion répond — sync OK (usage futur)
-    }
-  };
-} catch(e) {
-  console.warn('BroadcastChannel non supporté:', e);
-}
+// (canal déjà ouvert en tête de script — fonctions de diffusion ci-dessous)
 
 function diffuserStatsVehicules() {
   if (!ccffChannel) return;
@@ -1957,8 +1959,6 @@ function diffuserStatsVehicules() {
 }
 
 // ── Marqueurs patrouilles sur la carte (depuis gestion.html) ─────────────────
-var marqueursPatrouilles = {};
-
 function afficherMarqueursPatrouilles(patrouilles) {
   // Supprimer les anciens marqueurs
   Object.keys(marqueursPatrouilles).forEach(function(id) {
