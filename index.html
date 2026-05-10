@@ -1217,6 +1217,61 @@ function makeIcon(type, statut) {
   return L.divIcon({ html, className:'', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2] });
 }
 
+// ── Position DFCI : lookup du carreau 2km contenant (lat, lng) ───────────────
+function latLngToDFCI(lat, lng) {
+  if (typeof DFCI_2KM === 'undefined' || !DFCI_2KM) return null;
+  for (var i = 0; i < DFCI_2KM.features.length; i++) {
+    var f    = DFCI_2KM.features[i];
+    var ring = f.geometry.coordinates[0];
+    // Bbox rapide (évite le test point-in-polygon complet pour 99% des cas)
+    var lons = ring.map(function(c){ return c[0]; });
+    var lats = ring.map(function(c){ return c[1]; });
+    var minLon = Math.min.apply(null, lons), maxLon = Math.max.apply(null, lons);
+    var minLat = Math.min.apply(null, lats), maxLat = Math.max.apply(null, lats);
+    if (lng >= minLon && lng <= maxLon && lat >= minLat && lat <= maxLat) {
+      // Affiner : zone 1km selon position dans le carreau
+      var midLat = (minLat + maxLat) / 2;
+      var midLon = (minLon + maxLon) / 2;
+      var mLa = (maxLat - minLat) * 0.25;
+      var mLo = (maxLon - minLon) * 0.25;
+      var zone;
+      if (lat > midLat - mLa && lat < midLat + mLa && lng > midLon - mLo && lng < midLon + mLo) {
+        zone = '.5';
+      } else if (lat >= midLat && lng <= midLon) { zone = '.1'; }
+      else if   (lat >= midLat && lng >  midLon) { zone = '.2'; }
+      else if   (lat <  midLat && lng >  midLon) { zone = '.3'; }
+      else                                        { zone = '.4'; }
+      return f.properties.c + zone;
+    }
+  }
+  return null;
+}
+
+// Toggle état position par véhicule (false = LatLng, true = DFCI)
+var posToggleState = {};
+
+function toggleVehiclePos(vid, lat, lng) {
+  posToggleState[vid] = !posToggleState[vid];
+  var useDFCI = posToggleState[vid];
+  var el = document.getElementById('vpos-val-' + vid);
+  var btn = document.getElementById('vpos-btn-' + vid);
+  if (!el || !btn) return;
+  if (useDFCI) {
+    var dfci = latLngToDFCI(lat, lng);
+    el.textContent  = dfci || 'Hors zone DFCI';
+    el.style.color  = dfci ? '#e8a020' : '#ef5350';
+    el.style.fontSize = '13px';
+    btn.textContent = '📍';
+    btn.title       = 'Afficher coordonnées GPS';
+  } else {
+    el.textContent  = lat.toFixed(4) + 'N ' + lng.toFixed(4) + 'E';
+    el.style.color  = '#e0e0e0';
+    el.style.fontSize = '11px';
+    btn.textContent = '📐';
+    btn.title       = 'Afficher code DFCI';
+  }
+}
+
 // --- MARQUEURS ---------------------------------------------------------------
 const clusterGroup = L.markerClusterGroup({
   maxClusterRadius: 50,
@@ -1249,7 +1304,18 @@ vehicules.forEach(v => {
     + '<div class="popup-row"><span class="lbl">Statut</span><span class="val ' + statClass + '">' + statDot + ' ' + statLabel + '</span></div>'
     + '<div class="popup-row"><span class="lbl">Vitesse</span><span class="val">' + Math.round(v.vitesse) + ' km/h</span></div>'
     + '<div class="popup-row"><span class="lbl">MAJ</span><span class="val">' + v.heure + '</span></div>'
-    + '<div class="popup-row"><span class="lbl">Position</span><span class="val" style="font-size:11px;">' + v.lat.toFixed(4) + 'N ' + v.lng.toFixed(4) + 'E</span></div>'
+    + '<div class="popup-row" style="align-items:center;">'
+    +   '<span class="lbl">Position</span>'
+    +   '<span style="display:flex;align-items:center;gap:6px;">'
+    +     '<span class="val" id="vpos-val-' + v.id + '" style="font-size:11px;">' + v.lat.toFixed(4) + 'N ' + v.lng.toFixed(4) + 'E</span>'
+    +     '<button id="vpos-btn-' + v.id + '" '
+    +       'onclick="toggleVehiclePos(' + v.id + ',' + v.lat + ',' + v.lng + ')" '
+    +       'title="Afficher code DFCI" '
+    +       'style="background:#1a2535;border:1px solid #2a3a50;border-radius:4px;color:#e8a020;'
+    +              'font-size:12px;padding:1px 5px;cursor:pointer;line-height:1.4;flex-shrink:0;"'
+    +     '>📐</button>'
+    +   '</span>'
+    + '</div>'
     + '</div>';
 
   var marker = L.marker([v.lat, v.lng], { icon: makeIcon(v.type, v.statut) })
