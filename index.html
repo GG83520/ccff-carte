@@ -1272,6 +1272,58 @@ function toggleVehiclePos(vid, lat, lng) {
   }
 }
 
+// ── Construction popup véhicule — appelée à la création ET au rafraîchissement
+function buildVehiclePopup(v) {
+  var bgColor   = v.type==='4x4' ? '#1a3a1a' : v.type==='eau' ? '#1a2a3a' : '#3a1a1a';
+  var typeIcon  = v.type==='4x4' ? '&#x1F699;' : v.type==='eau' ? '&#x1F692;' : '&#x2B50;';
+  var typeLabel = v.type==='4x4' ? '4x4 / VLTT' : v.type==='eau' ? 'Porteur eau / CCF' : 'Commandement';
+  var statClass = v.statut==='patrouille' ? 'green' : v.statut==='attente' ? 'orange' : '';
+  var statLabel = v.statut==='patrouille' ? 'En patrouille' : v.statut==='attente' ? 'En attente' : 'Hors service';
+  var statDot   = v.statut==='patrouille' ? '&#x1F7E2;' : v.statut==='attente' ? '&#x1F7E1;' : '&#x1F534;';
+
+  // Respecter le choix toggle actuel de l'utilisateur
+  var useDFCI   = !!posToggleState[v.id];
+  var posVal, posColor, posFontSize, btnIcon, btnTitle;
+  if (useDFCI) {
+    var dfci    = latLngToDFCI(v.lat, v.lng);
+    posVal      = dfci || 'Hors zone DFCI';
+    posColor    = dfci ? '#e8a020' : '#ef5350';
+    posFontSize = '13px';
+    btnIcon     = '&#x1F4CD;';   // 📍
+    btnTitle    = 'Afficher coordonn\u00e9es GPS';
+  } else {
+    posVal      = v.lat.toFixed(4) + 'N ' + v.lng.toFixed(4) + 'E';
+    posColor    = '#e0e0e0';
+    posFontSize = '11px';
+    btnIcon     = '&#x1F4D0;';   // 📐
+    btnTitle    = 'Afficher code DFCI';
+  }
+
+  return '<div class="popup-inner">'
+    + '<div class="popup-header">'
+    + '<div class="popup-icon" style="background:' + bgColor + '">' + typeIcon + '</div>'
+    + '<div><div class="popup-title">' + v.nom + '</div>'
+    + '<div class="popup-sub">' + typeLabel + ' - ' + v.secteur + '</div></div>'
+    + '</div>'
+    + '<div class="popup-row"><span class="lbl">Equipe</span><span class="val">' + v.equipe + '</span></div>'
+    + '<div class="popup-row"><span class="lbl">Statut</span><span class="val ' + statClass + '">' + statDot + ' ' + statLabel + '</span></div>'
+    + '<div class="popup-row"><span class="lbl">Vitesse</span><span class="val">' + Math.round(v.vitesse) + ' km/h</span></div>'
+    + '<div class="popup-row"><span class="lbl">MAJ</span><span class="val">' + v.heure + '</span></div>'
+    + '<div class="popup-row" style="align-items:center;">'
+    +   '<span class="lbl">Position</span>'
+    +   '<span style="display:flex;align-items:center;gap:6px;">'
+    +     '<span class="val" id="vpos-val-' + v.id + '" style="font-size:' + posFontSize + ';color:' + posColor + ';">' + posVal + '</span>'
+    +     '<button id="vpos-btn-' + v.id + '" '
+    +       'onclick="toggleVehiclePos(' + v.id + ',' + v.lat + ',' + v.lng + ')" '
+    +       'title="' + btnTitle + '" '
+    +       'style="background:#1a2535;border:1px solid #2a3a50;border-radius:4px;color:#e8a020;'
+    +              'font-size:12px;padding:1px 5px;cursor:pointer;line-height:1.4;flex-shrink:0;"'
+    +     '>' + btnIcon + '</button>'
+    +   '</span>'
+    + '</div>'
+    + '</div>';
+}
+
 // --- MARQUEURS ---------------------------------------------------------------
 const clusterGroup = L.markerClusterGroup({
   maxClusterRadius: 50,
@@ -1287,45 +1339,13 @@ const clusterGroup = L.markerClusterGroup({
 const markers = {};
 
 vehicules.forEach(v => {
-  var bgColor   = v.type==='4x4' ? '#1a3a1a' : v.type==='eau' ? '#1a2a3a' : '#3a1a1a';
-  var typeIcon  = v.type==='4x4' ? '&#x1F699;' : v.type==='eau' ? '&#x1F692;' : '&#x2B50;';
-  var typeLabel = v.type==='4x4' ? '4x4 / VLTT' : v.type==='eau' ? 'Porteur eau / CCF' : 'Commandement';
-  var statClass = v.statut==='patrouille' ? 'green' : v.statut==='attente' ? 'orange' : '';
-  var statLabel = v.statut==='patrouille' ? 'En patrouille' : v.statut==='attente' ? 'En attente' : 'Hors service';
-  var statDot   = v.statut==='patrouille' ? '&#x1F7E2;' : v.statut==='attente' ? '&#x1F7E1;' : '&#x1F534;';
-
-  var popup = '<div class="popup-inner">'
-    + '<div class="popup-header">'
-    + '<div class="popup-icon" style="background:' + bgColor + '">' + typeIcon + '</div>'
-    + '<div><div class="popup-title">' + v.nom + '</div>'
-    + '<div class="popup-sub">' + typeLabel + ' - ' + v.secteur + '</div></div>'
-    + '</div>'
-    + '<div class="popup-row"><span class="lbl">Equipe</span><span class="val">' + v.equipe + '</span></div>'
-    + '<div class="popup-row"><span class="lbl">Statut</span><span class="val ' + statClass + '">' + statDot + ' ' + statLabel + '</span></div>'
-    + '<div class="popup-row"><span class="lbl">Vitesse</span><span class="val">' + Math.round(v.vitesse) + ' km/h</span></div>'
-    + '<div class="popup-row"><span class="lbl">MAJ</span><span class="val">' + v.heure + '</span></div>'
-    + '<div class="popup-row" style="align-items:center;">'
-    +   '<span class="lbl">Position</span>'
-    +   '<span style="display:flex;align-items:center;gap:6px;">'
-    +     '<span class="val" id="vpos-val-' + v.id + '" style="font-size:11px;">' + v.lat.toFixed(4) + 'N ' + v.lng.toFixed(4) + 'E</span>'
-    +     '<button id="vpos-btn-' + v.id + '" '
-    +       'onclick="toggleVehiclePos(' + v.id + ',' + v.lat + ',' + v.lng + ')" '
-    +       'title="Afficher code DFCI" '
-    +       'style="background:#1a2535;border:1px solid #2a3a50;border-radius:4px;color:#e8a020;'
-    +              'font-size:12px;padding:1px 5px;cursor:pointer;line-height:1.4;flex-shrink:0;"'
-    +     '>📐</button>'
-    +   '</span>'
-    + '</div>'
-    + '</div>';
+  var popup = buildVehiclePopup(v);
 
   var marker = L.marker([v.lat, v.lng], { icon: makeIcon(v.type, v.statut) })
     .bindPopup(popup, { className: 'custom-popup', maxWidth: 280 })
     .on('click', function(){ selectVehicle(v.id); });
 
   markers[v.id] = { marker: marker, data: v };
-  // En mode exploitation (défaut), ne pas afficher les véhicules simulés
-  // Ils seront ajoutés au cluster quand le mode DEMO est activé
-  // clusterGroup.addLayer(marker);  <- différé à appliquerMode()
 });
 
 clusterGroup.addTo(map);
@@ -1834,6 +1854,9 @@ function fetchTraccar() {
           vehicules[i].statut  = speed > 2 ? 'patrouille' : 'attente';
           if (markers[vehicules[i].id]) {
             markers[vehicules[i].id].marker.setLatLng([lat, lon]);
+            // Reconstruire le popup en respectant le toggle position actuel
+            var mkrObj = markers[vehicules[i].id];
+            mkrObj.marker.getPopup().setContent(buildVehiclePopup(vehicules[i]));
           }
           found = true;
           break;
@@ -1890,13 +1913,101 @@ function updateStats() {
   document.getElementById('stat-actif').textContent  = actif;
   document.getElementById('stat-attente').textContent = attente;
   document.getElementById('stat-hs').textContent     = hs;
+  diffuserStatsVehicules();
 }
 
 // Demarrer le polling Traccar toutes les 30s
 fetchTraccar();
 setInterval(fetchTraccar, 30000);
 
-// --- SIMULATION MOUVEMENT (fallback - uniquement en mode DEMO) --------------
+// --- BROADCASTCHANNEL — sync avec gestion.html --------------------------------
+var ccffChannel = null;
+try {
+  ccffChannel = new BroadcastChannel('ccff-var');
+  ccffChannel.onmessage = function(evt) {
+    var msg = evt.data;
+    if (!msg || !msg.type) return;
+
+    if (msg.type === 'gestion-ready' || msg.type === 'ping-gestion') {
+      // L'écran gestion est connecté — lui envoyer les stats actuelles
+      diffuserStatsVehicules();
+      if (ccffChannel) ccffChannel.postMessage({ type: 'ping', source: 'carte' });
+    }
+    if (msg.type === 'patrouilles-update') {
+      // Recevoir les patrouilles actives et afficher marqueurs communes sur carte
+      afficherMarqueursPatrouilles(msg.patrouilles || []);
+    }
+    if (msg.type === 'pong') {
+      // Gestion répond — sync OK (usage futur)
+    }
+  };
+} catch(e) {
+  console.warn('BroadcastChannel non supporté:', e);
+}
+
+function diffuserStatsVehicules() {
+  if (!ccffChannel) return;
+  var actif   = vehicules.filter(function(v){ return v.statut === 'patrouille'; }).length;
+  var attente = vehicules.filter(function(v){ return v.statut === 'attente'; }).length;
+  var hs      = vehicules.filter(function(v){ return v.statut === 'hs'; }).length;
+  ccffChannel.postMessage({
+    type: 'vehicules-update',
+    stats: { total: vehicules.length, actif: actif, attente: attente, hs: hs }
+  });
+}
+
+// ── Marqueurs patrouilles sur la carte (depuis gestion.html) ─────────────────
+var marqueursPatrouilles = {};
+
+function afficherMarqueursPatrouilles(patrouilles) {
+  // Supprimer les anciens marqueurs
+  Object.keys(marqueursPatrouilles).forEach(function(id) {
+    map.removeLayer(marqueursPatrouilles[id]);
+  });
+  marqueursPatrouilles = {};
+
+  patrouilles.forEach(function(pat) {
+    if (pat.statut !== 'actif') return;
+    // Géocodage commune via API gouv.fr
+    fetch('https://geo.api.gouv.fr/communes?nom='
+          + encodeURIComponent(pat.commune)
+          + '&fields=centre&format=json&limit=1')
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        if (!data || data.length === 0) return;
+        var coords = data[0].centre && data[0].centre.coordinates;
+        if (!coords) return;
+        var lng = coords[0], lat = coords[1];
+        var html = '<div style="'
+          + 'background:#1e7e3488;border:2px solid #4caf50;border-radius:50%;'
+          + 'width:32px;height:32px;display:flex;align-items:center;'
+          + 'justify-content:center;font-size:16px;'
+          + 'box-shadow:0 2px 8px rgba(0,0,0,0.5);">🚶</div>';
+        var mkr = L.marker([lat, lng], {
+          icon: L.divIcon({ html: html, className: '', iconSize: [32,32], iconAnchor: [16,16] }),
+          zIndexOffset: 500
+        }).bindPopup(
+          '<div class="popup-inner" style="min-width:180px;">'
+          + '<div class="popup-header">'
+          + '<div class="popup-icon" style="background:#1a3a1a;font-size:18px;">🚶</div>'
+          + '<div><div class="popup-title">' + pat.num + '</div>'
+          + '<div class="popup-sub">Patrouille — ' + pat.commune + '</div></div>'
+          + '</div>'
+          + '<div class="popup-row"><span class="lbl">Équipe</span><span class="val">' + pat.equipe + '</span></div>'
+          + '<div class="popup-row"><span class="lbl">Statut</span><span class="val green">🟢 Active</span></div>'
+          + '<div class="popup-row"><span class="lbl">Depuis</span><span class="val">' + pat.heure + '</span></div>'
+          + '</div>',
+          { className: 'custom-popup', maxWidth: 240 }
+        );
+        map.addLayer(mkr);
+        marqueursPatrouilles[pat.id] = mkr;
+      })
+      .catch(function(){});
+  });
+}
+
+// Diffuser les stats toutes les 30s vers gestion.html
+setInterval(diffuserStatsVehicules, 30000);
 setInterval(function() {
   if (!simulationActive) return;  // Mode exploitation = pas de simulation
   if (traccarActif) return;       // Traccar actif = pas de simulation
@@ -1909,6 +2020,8 @@ setInterval(function() {
       v.heure = new Date().toTimeString().slice(0,5);
       if (markers[v.id]) {
         markers[v.id].marker.setLatLng([v.lat, v.lng]);
+        // Reconstruire le popup en respectant le toggle position actuel
+        markers[v.id].marker.getPopup().setContent(buildVehiclePopup(v));
       }
     }
   });
