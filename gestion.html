@@ -695,7 +695,8 @@ function effacerLog() {
 
 // ── DIFFUSION VERS LA CARTE (BroadcastChannel) ────────────────────────────────
 function diffuserPatrouilles() {
-  if (!channel) return;
+  if (!channel) { console.warn('[BC] canal null — envoi impossible'); return; }
+  console.log('[BC] Envoi patrouilles-update:', patrouilles.length, 'patrouille(s)');
   channel.postMessage({
     type: 'patrouilles-update',
     patrouilles: patrouilles,
