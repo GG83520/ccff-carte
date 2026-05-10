@@ -1966,18 +1966,29 @@ function afficherMarqueursPatrouilles(patrouilles) {
   });
   marqueursPatrouilles = {};
 
+  console.log('[F4] patrouilles reçues:', patrouilles.length, patrouilles);
+
   patrouilles.forEach(function(pat) {
     if (pat.statut !== 'actif') return;
-    // Géocodage commune via API gouv.fr
+    console.log('[F4] géocodage commune:', pat.commune);
+
     fetch('https://geo.api.gouv.fr/communes?nom='
           + encodeURIComponent(pat.commune)
           + '&fields=centre&format=json&limit=1')
       .then(function(r){ return r.json(); })
       .then(function(data) {
-        if (!data || data.length === 0) return;
+        console.log('[F4] réponse API pour', pat.commune, ':', data);
+        if (!data || data.length === 0) {
+          console.warn('[F4] commune introuvable:', pat.commune);
+          return;
+        }
         var coords = data[0].centre && data[0].centre.coordinates;
-        if (!coords) return;
+        if (!coords) {
+          console.warn('[F4] pas de coordonnées centre pour:', pat.commune, data[0]);
+          return;
+        }
         var lng = coords[0], lat = coords[1];
+        console.log('[F4] marqueur posé à', lat, lng, 'pour', pat.commune);
         var html = '<div style="'
           + 'background:#1e7e3488;border:2px solid #4caf50;border-radius:50%;'
           + 'width:32px;height:32px;display:flex;align-items:center;'
@@ -2002,7 +2013,9 @@ function afficherMarqueursPatrouilles(patrouilles) {
         map.addLayer(mkr);
         marqueursPatrouilles[pat.id] = mkr;
       })
-      .catch(function(){});
+      .catch(function(err){
+        console.error('[F4] fetch erreur pour', pat.commune, ':', err);
+      });
   });
 }
 
