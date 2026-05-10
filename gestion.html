@@ -593,11 +593,11 @@ function renderPatrouilles() {
 
   if (patrouilles.length === 0) {
     liste.innerHTML = '';
-    liste.appendChild(empty);
+    if (empty) liste.appendChild(empty);
     renderStats();
     return;
   }
-  if (empty.parentNode) empty.parentNode.removeChild(empty);
+  if (empty && empty.parentNode) empty.parentNode.removeChild(empty);
 
   liste.innerHTML = patrouilles.map(function(pat) {
     var isActif = pat.statut === 'actif';
@@ -669,10 +669,11 @@ function renderLog() {
 
   if (logEntries.length === 0) {
     container.innerHTML = '';
-    container.appendChild(empty);
+    if (empty) container.appendChild(empty);
     return;
   }
-  if (empty.parentNode) empty.parentNode.removeChild(empty);
+  // Retirer le placeholder s'il est encore dans le DOM
+  if (empty && empty.parentNode) empty.parentNode.removeChild(empty);
 
   container.innerHTML = logEntries.map(function(e) {
     return '<div class="log-entry type-' + e.type + '">'
@@ -720,4 +721,3 @@ ajouterLogAuto('info', '🛡 Écran Gestion démarré — CCFF VAR', 'Système')
 </script>
 </body>
 </html>
-
