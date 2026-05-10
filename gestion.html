@@ -696,13 +696,18 @@ function effacerLog() {
 
 // ── DIFFUSION VERS LA CARTE (BroadcastChannel) ────────────────────────────────
 function diffuserPatrouilles() {
+  console.log('[BC] diffuserPatrouilles appelée, channel=', !!channel, 'nb=', patrouilles.length);
   if (!channel) { console.warn('[BC] canal null — envoi impossible'); return; }
-  console.log('[BC] Envoi patrouilles-update:', patrouilles.length, 'patrouille(s)');
-  channel.postMessage({
-    type: 'patrouilles-update',
-    patrouilles: patrouilles,
-    source: 'gestion'
-  });
+  try {
+    channel.postMessage({
+      type: 'patrouilles-update',
+      patrouilles: patrouilles,
+      source: 'gestion'
+    });
+    console.log('[BC] patrouilles-update ENVOYÉ OK');
+  } catch(e) {
+    console.error('[BC] Erreur postMessage:', e);
+  }
 }
 
 // ── PING PERIODIQUE vers la carte (vérif sync) ───────────────────────────────
