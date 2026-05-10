@@ -606,6 +606,23 @@
   .dfci-result-err { color:#ef5350 !important; }
   .dfci-search-marker { background:transparent !important; border:none !important; }
 
+  /* ── F1 : Contour commune ── */
+  .commune-label {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffd166;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.7);
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    white-space: nowrap;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
 
   /* ── MODES DEMO / EXPLOITATION ── */
   #mode-btn {
@@ -1156,6 +1173,14 @@ map.on('zoomend', function() {
   }
 });
 
+// ── F1 : effacer contours communes au clic carte (hors marqueur/popup) ──
+map.on('click', function() {
+  [1,2].forEach(function(n) {
+    if (dfciState[n].commune)      { map.removeLayer(dfciState[n].commune);      dfciState[n].commune=null; }
+    if (dfciState[n].communeLabel) { map.removeLayer(dfciState[n].communeLabel); dfciState[n].communeLabel=null; }
+  });
+});
+
 // --- ICÔNES VÉHICULES --------------------------------------------------------
 function makeIcon(type, statut) {
   const colors = { '4x4':'#4caf50', 'eau':'#42a5f5', 'cmd':'#ef9a9a' };
@@ -1298,9 +1323,81 @@ var COULEURS = {
 };
 
 var dfciState = {
-  1: { marker: null, highlight: null },
-  2: { marker: null, highlight: null }
+  1: { marker: null, highlight: null, commune: null, communeLabel: null },
+  2: { marker: null, highlight: null, commune: null, communeLabel: null }
 };
+
+// ── F1 : Fetch contour commune depuis API geo.gouv.fr ──────────────────────
+var COULEURS_COMMUNE = {
+  1: '#ffd166',   // jaune chaud pour S1
+  2: '#a8d8ff'    // bleu clair pour S2
+};
+
+function fetchCommune(n, lat, lon, popupRef) {
+  // Effacer l'ancien contour commune de ce slot
+  if (dfciState[n].commune)      { map.removeLayer(dfciState[n].commune);      dfciState[n].commune=null; }
+  if (dfciState[n].communeLabel) { map.removeLayer(dfciState[n].communeLabel); dfciState[n].communeLabel=null; }
+
+  var url = 'https://geo.api.gouv.fr/communes?lat=' + lat + '&lon=' + lon + '&fields=nom,contour&format=geojson&geometry=contour';
+
+  fetch(url)
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      if (!data.features || data.features.length === 0) return;
+      var feat    = data.features[0];
+      var nomComm = feat.properties.nom || '';
+      var col     = COULEURS_COMMUNE[n];
+
+      // Contour pointillé
+      dfciState[n].commune = L.geoJSON(feat, {
+        style: {
+          color:       col,
+          weight:      2,
+          dashArray:   '6,5',
+          fillColor:   col,
+          fillOpacity: 0.07,
+          opacity:     0.9
+        }
+      }).addTo(map);
+
+      // Label centré sur la commune
+      var bounds = dfciState[n].commune.getBounds();
+      var center = bounds.getCenter();
+      dfciState[n].communeLabel = L.marker([center.lat, center.lng], {
+        icon: L.divIcon({
+          className: 'commune-label',
+          html: nomComm,
+          iconSize: null,
+          iconAnchor: null
+        }),
+        interactive: false,
+        keyboard: false
+      }).addTo(map);
+
+      // Injecter le nom de commune dans le popup DFCI déjà ouvert
+      if (popupRef && popupRef.isOpen()) {
+        var container = popupRef.getElement();
+        if (container) {
+          var existing = container.querySelector('.commune-row');
+          if (!existing) {
+            var inner = container.querySelector('.popup-inner') || container.querySelector('div');
+            if (inner) {
+              var row = document.createElement('div');
+              row.className = 'commune-row';
+              row.style.cssText = 'border-top:1px solid #2a3040;margin-top:6px;padding-top:6px;text-align:center;';
+              row.innerHTML = '<span style="font-size:10px;color:#6a7a8a;">COMMUNE</span>'
+                + '<div style="font-size:14px;font-weight:700;color:' + col + ';letter-spacing:0.5px;margin-top:2px;">'
+                + nomComm + '</div>';
+              inner.appendChild(row);
+            }
+          }
+        }
+      }
+    })
+    .catch(function(err) {
+      console.warn('[F1] Commune fetch erreur:', err.message);
+    });
+}
 
 var ZONE_LABELS = {
   '.1':'Haut Gauche', '.2':'Haut Droit',
@@ -1352,8 +1449,10 @@ function dfciZoneCenter(feat, zone) {
 }
 
 function dfciClearSearch(n) {
-  if (dfciState[n].marker)    { map.removeLayer(dfciState[n].marker);    dfciState[n].marker=null; }
-  if (dfciState[n].highlight) { map.removeLayer(dfciState[n].highlight); dfciState[n].highlight=null; }
+  if (dfciState[n].marker)       { map.removeLayer(dfciState[n].marker);       dfciState[n].marker=null; }
+  if (dfciState[n].highlight)    { map.removeLayer(dfciState[n].highlight);    dfciState[n].highlight=null; }
+  if (dfciState[n].commune)      { map.removeLayer(dfciState[n].commune);      dfciState[n].commune=null; }
+  if (dfciState[n].communeLabel) { map.removeLayer(dfciState[n].communeLabel); dfciState[n].communeLabel=null; }
 }
 
 function dfciClear(n) {
@@ -1423,6 +1522,9 @@ function dfciSearch(n) {
   }).addTo(map);
 
   dfciState[n].marker.bindPopup(popupTxt, {className:'custom-popup', maxWidth:220}).openPopup();
+
+  // ── F1 : charger et afficher le contour de la commune ──
+  fetchCommune(n, center[0], center[1], dfciState[n].marker.getPopup());
 }
 
 // Autocompletion pour les 2 champs
