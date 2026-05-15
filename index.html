@@ -1737,7 +1737,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // --- MODE DEMO / EXPLOITATION -----------------------------------------------
-var PIN_CODE  = '4321';   // <- changer ici pour personnaliser
+var PIN_CODE  = '1234';   // <- changer ici pour personnaliser
 var modeDemo  = false;
 
 function appliquerMode() {
@@ -1767,7 +1767,7 @@ function appliquerMode() {
     // ── MODE EXPLOITATION : carte epuree ─────────────────────────────
     sidebar.style.display = 'none';
     if (pill) pill.style.display = 'none';
-    btn.innerHTML = '&#9881; MODE DEMO';
+    btn.innerHTML = '&#9881; ADV MODE';
     btn.classList.remove('demo-actif');
     btn.title = 'Activer le mode demonstration (PIN requis)';
     simulationActive = false;
