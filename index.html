@@ -1962,13 +1962,13 @@ var STATUT_B_OPTIONS = [
 var modeDemo  = false;  // déclaré ici pour les cadres incidents
 
 var incidentData = {
-  1: { code:'', commune:'', statutA:'', statutB:'', ts: null,
+  1: { code:'', commune:'', statutA:'', statutB:'', ts: null, collapsed: false,
        responsable:'', tel:'', moyen:'', acces:'', pointeau:'', observations:'', hdebut:'', hfin:'' },
-  2: { code:'', commune:'', statutA:'', statutB:'', ts: null,
+  2: { code:'', commune:'', statutA:'', statutB:'', ts: null, collapsed: false,
        responsable:'', tel:'', moyen:'', acces:'', pointeau:'', observations:'', hdebut:'', hfin:'' },
-  3: { code:'', commune:'', statutA:'', statutB:'', ts: null,
+  3: { code:'', commune:'', statutA:'', statutB:'', ts: null, collapsed: false,
        responsable:'', tel:'', moyen:'', acces:'', pointeau:'', observations:'', hdebut:'', hfin:'' },
-  4: { code:'', commune:'', statutA:'', statutB:'', ts: null,
+  4: { code:'', commune:'', statutA:'', statutB:'', ts: null, collapsed: false,
        responsable:'', tel:'', moyen:'', acces:'', pointeau:'', observations:'', hdebut:'', hfin:'' }
 };
 
@@ -2015,7 +2015,7 @@ function renderIncidentCard(n) {
   var heureCreation = d.ts ? new Date(d.ts).toTimeString().slice(0,5) : '--:--';
   var sA = getStatutClass(d.statutA);
 
-  var isCollapsed = document.getElementById('ic-card-'+n) ? ' collapsed' : '';
+  var isCollapsed = d.collapsed ? ' collapsed' : '';
   return '<div class="incident-card'+isCollapsed+'" id="ic-card-'+n+'">'
     + '<div class="ic-header '+sA+'">'
     +   '<div class="ic-header-left" onclick="toggleCollapseCard('+n+')" style="flex:1;cursor:pointer;">'
@@ -2088,12 +2088,13 @@ function ouvrirIncident(n, code, commune) {
 }
 
 function toggleCollapseCard(n) {
+  incidentData[n].collapsed = !incidentData[n].collapsed;
   var card = document.getElementById('ic-card-'+n);
   if (card) card.classList.toggle('collapsed');
 }
 
 function fermerIncident(n) {
-  incidentData[n] = { code:'', commune:'', statutA:'', statutB:'', ts:null,
+  incidentData[n] = { code:'', commune:'', statutA:'', statutB:'', ts:null, collapsed:false,
     responsable:'', tel:'', moyen:'', acces:'', pointeau:'', observations:'', hdebut:'', hfin:'' };
   renderIncidentsPanel();
 }
