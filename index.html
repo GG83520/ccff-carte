@@ -1998,58 +1998,54 @@ function getStatutClass(statutA) {
   return map[statutA] || 'ic-statut-default';
 }
 
+function icInput(n, field, placeholder, val) {
+  // Génère un input sans onchange inline — le handler est délégué sur #incidents-panel
+  return '<input class="ic-cell-input" data-n="'+n+'" data-field="'+field+'"'
+       + ' value="'+val+'" placeholder="'+placeholder+'"/>';
+}
+
 function renderIncidentCard(n) {
   var d   = incidentData[n];
   var col = COULEURS[n];
   if (!d.code) return '';
 
   var fiche = FICHE_TEST[d.code] || {};
-
   var heureCreation = d.ts ? new Date(d.ts).toTimeString().slice(0,5) : '--:--';
+  var sA = getStatutClass(d.statutA);
 
   return '<div class="incident-card" id="ic-card-'+n+'">'
-    // Header coloré selon statut A
-    + '<div class="ic-header '+getStatutClass(d.statutA)+'">'
+    + '<div class="ic-header '+sA+'">'
     +   '<div class="ic-header-left">'
     +     '<span class="ic-slot" style="color:'+col.fill+';">'+col.label+'</span>'
     +     '<span class="ic-code">'+d.code+'</span>'
     +   '</div>'
     +   '<button class="ic-close" onclick="fermerIncident('+n+')" title="Fermer">✕</button>'
     + '</div>'
-    // Commune
-    + '<div class="ic-commune '+getStatutClass(d.statutA)+'">'
-    +   '📍 '+(d.commune || '...')
-    + '</div>'
-    // Body
+    + '<div class="ic-commune '+sA+'">📍 '+(d.commune || '...')+'</div>'
     + '<div class="ic-body">'
     +   '<div class="ic-statuts">'
     +     buildSelectHTML(STATUT_A_OPTIONS, d.statutA, 'ic-sa-'+n, 'onChangeStatutA('+n+',this.value)')
     +     buildSelectHTML(STATUT_B_OPTIONS, d.statutB, 'ic-sb-'+n, 'onChangeStatutB('+n+',this.value)')
     +   '</div>'
     +   '<div class="ic-grid">'
-    // Ligne 1 : Responsable | Tél
     +     '<div class="ic-cell"><div class="ic-cell-label">Responsable CCFF</div>'
-    +       '<input class="ic-cell-input" id="ic-resp-'+n+'" value="'+(d.responsable||fiche.responsable||'')+'" placeholder="Nom prénom" onchange="saveField('+n+','responsable',this.value)"/></div>'
+    +       icInput(n,'responsable','Nom prénom', d.responsable||fiche.responsable||'')+'</div>'
     +     '<div class="ic-cell"><div class="ic-cell-label">Tél</div>'
-    +       '<input class="ic-cell-input" id="ic-tel-'+n+'" value="'+(d.tel||fiche.tel||'')+'" placeholder="06 00 00 00 00" onchange="saveField('+n+','tel',this.value)"/></div>'
-    // Ligne 2 : Moyen engagé | Statut B (affiché dans select)
+    +       icInput(n,'tel','06 00 00 00 00', d.tel||fiche.tel||'')+'</div>'
     +     '<div class="ic-cell"><div class="ic-cell-label">Moyen engagé</div>'
-    +       '<input class="ic-cell-input" id="ic-moyen-'+n+'" value="'+(d.moyen||fiche.moyen||'')+'" placeholder="VL, CCF..." onchange="saveField('+n+','moyen',this.value)"/></div>'
-    +     '<div class="ic-cell"><div class="ic-cell-label">Point d&#39;eau</div>'
-    +       '<input class="ic-cell-input" id="ic-pe-'+n+'" value="'+(d.pointeau||fiche.pointeau||'')+'" placeholder="Réf. point eau" onchange="saveField('+n+','pointeau',this.value)"/></div>'
-    // Ligne 3 : Acces/Piste | Point d'eau
+    +       icInput(n,'moyen','VL, CCF...', d.moyen||fiche.moyen||'')+'</div>'
+    +     '<div class="ic-cell"><div class="ic-cell-label">Point d'eau</div>'
+    +       icInput(n,'pointeau','Réf. point eau', d.pointeau||fiche.pointeau||'')+'</div>'
     +     '<div class="ic-cell"><div class="ic-cell-label">Accès / Piste</div>'
-    +       '<input class="ic-cell-input" id="ic-acces-'+n+'" value="'+(d.acces||fiche.acces||'')+'" placeholder="Itinéraire..." onchange="saveField('+n+','acces',this.value)"/></div>'
+    +       icInput(n,'acces','Itinéraire...', d.acces||fiche.acces||'')+'</div>'
     +     '<div class="ic-cell"><div class="ic-cell-label">Heure début</div>'
-    +       '<input class="ic-cell-input" id="ic-hdeb-'+n+'" value="'+(d.hdebut||'')+'" placeholder="HH:MM" onchange="saveField('+n+','hdebut',this.value)"/></div>'
-    // Ligne 4 : Observations (pleine largeur)
+    +       icInput(n,'hdebut','HH:MM', d.hdebut||'')+'</div>'
     +     '<div class="ic-cell full"><div class="ic-cell-label">Observations</div>'
-    +       '<input class="ic-cell-input" id="ic-obs-'+n+'" value="'+(d.observations||fiche.observations||'')+'" placeholder="Notes libres..." onchange="saveField('+n+','observations',this.value)"/></div>'
-    // Ligne 5 : Heure début | Heure fin
+    +       icInput(n,'observations','Notes libres...', d.observations||fiche.observations||'')+'</div>'
     +     '<div class="ic-cell"><div class="ic-cell-label">Heure fin</div>'
-    +       '<input class="ic-cell-input" id="ic-hfin-'+n+'" value="'+(d.hfin||'')+'" placeholder="HH:MM" onchange="saveField('+n+','hfin',this.value)"/></div>'
+    +       icInput(n,'hfin','HH:MM', d.hfin||'')+'</div>'
     +     '<div class="ic-cell"><div class="ic-cell-label">Créé à</div>'
-    +       '<input class="ic-cell-input" value="'+heureCreation+'" placeholder="--:--" readonly style="color:#6a7a8a;"/></div>'
+    +       '<input class="ic-cell-input" value="'+heureCreation+'" readonly style="color:#6a7a8a;"/></div>'
     +   '</div>'
     + '</div>'
     + '</div>';
@@ -2070,6 +2066,13 @@ function renderIncidentsPanel() {
   });
 
   panel.innerHTML = slots.map(function(n){ return renderIncidentCard(n); }).join('');
+
+  // Handler délégué pour tous les inputs — évite les onchange inline avec apostrophes
+  panel.querySelectorAll('.ic-cell-input[data-field]').forEach(function(el) {
+    el.addEventListener('change', function() {
+      saveField(parseInt(this.dataset.n), this.dataset.field, this.value);
+    });
+  });
 }
 
 function ouvrirIncident(n, code, commune) {
