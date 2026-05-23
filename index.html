@@ -769,6 +769,12 @@
   .ic-statut-termine    { background: linear-gradient(135deg, #0a4a0a, #063506); }
   .ic-statut-default    { background: linear-gradient(135deg, #1a1f2e, #151922); }
 
+  /* ── Collapse cadres incidents ── */
+  .incident-card.collapsed .ic-body    { display: none; }
+  .incident-card .ic-header            { cursor: pointer; user-select: none; }
+  .ic-toggle-icon                      { font-size: 10px; margin-left: 4px; color: rgba(255,255,255,0.6); display: inline-block; transition: transform 0.2s; }
+  .incident-card.collapsed .ic-toggle-icon { transform: rotate(-90deg); }
+
   /* PIN overlay */
   #pin-overlay {
     display: none;
