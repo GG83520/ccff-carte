@@ -652,6 +652,121 @@
     color: #4caf50;
   }
 
+  /* ── CADRES INCIDENTS (overlay droit, zone DEMO) ── */
+  #incidents-panel {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 850;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 300px;
+    pointer-events: none;
+  }
+
+  .incident-card {
+    pointer-events: all;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.08);
+    animation: cardIn 0.25s ease;
+  }
+
+  @keyframes cardIn {
+    from { opacity:0; transform: translateX(20px); }
+    to   { opacity:1; transform: translateX(0); }
+  }
+
+  .ic-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .ic-header-left { display: flex; align-items: center; gap: 8px; }
+
+  .ic-slot {
+    font-size: 11px; font-weight: 700;
+    padding: 2px 7px; border-radius: 3px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(0,0,0,0.25); letter-spacing: 0.5px;
+  }
+
+  .ic-code { font-size: 16px; font-weight: 700; letter-spacing: 1px; color: #fff; }
+
+  .ic-close {
+    background: rgba(0,0,0,0.3); border: none;
+    color: rgba(255,255,255,0.7); border-radius: 4px;
+    width: 22px; height: 22px; cursor: pointer;
+    font-size: 12px; display: flex; align-items: center;
+    justify-content: center; transition: all 0.15s; flex-shrink: 0;
+  }
+  .ic-close:hover { background: rgba(0,0,0,0.5); color: #fff; }
+
+  .ic-commune {
+    font-size: 11px; color: rgba(255,255,255,0.75);
+    padding: 0 10px 6px;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 0.5px; font-style: italic;
+  }
+
+  .ic-body { background: #13181f; padding: 8px 10px; }
+
+  .ic-statuts { display: flex; gap: 6px; margin-bottom: 8px; }
+
+  .ic-select {
+    flex: 1; background: #1a1f2e; border: 1px solid #2a3040;
+    border-radius: 4px; color: #e0e0e0;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; padding: 4px 6px; cursor: pointer; outline: none;
+    transition: border-color 0.15s;
+  }
+  .ic-select:focus { border-color: #e85d26; }
+
+  .ic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+
+  .ic-cell {
+    background: #1a1f2e; border: 1px solid #1e2733;
+    border-radius: 4px; padding: 4px 6px;
+  }
+  .ic-cell.full { grid-column: 1 / -1; }
+
+  .ic-cell-label {
+    font-size: 9px; color: #6a7a8a; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 2px;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .ic-cell-input {
+    width: 100%; background: transparent; border: none;
+    color: #e0e0e0; font-family: 'Barlow', sans-serif;
+    font-size: 11px; outline: none; padding: 0;
+  }
+  .ic-cell-input::placeholder { color: #3a4a5a; font-style: italic; }
+  .ic-cell-input:focus { color: #fff; }
+
+  .ic-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 5px 10px 7px; background: #13181f;
+    border-top: 1px solid #1e2733;
+    font-size: 10px; color: #4a5a6a;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  /* Couleurs header selon Statut A */
+  .ic-statut-signale    { background: linear-gradient(135deg, #7a6000, #5a4500); }
+  .ic-statut-confirme   { background: linear-gradient(135deg, #8a3a00, #6a2a00); }
+  .ic-statut-traitement { background: linear-gradient(135deg, #7a1a00, #5a1000); }
+  .ic-statut-encours    { background: linear-gradient(135deg, #1a1a1a, #0a0a0a); border-bottom: 1px solid #333; }
+  .ic-statut-noyage     { background: linear-gradient(135deg, #0a3a6a, #062a5a); }
+  .ic-statut-termine    { background: linear-gradient(135deg, #0a4a0a, #063506); }
+  .ic-statut-default    { background: linear-gradient(135deg, #1a1f2e, #151922); }
+
   /* PIN overlay */
   #pin-overlay {
     display: none;
@@ -869,6 +984,9 @@
       <button class="layer-btn" id="btn-dfci" onclick="toggleDFCI()">📐 Carroyage DFCI</button>
       <button class="layer-btn" id="btn-dfci-ign" onclick="toggleDFCI_IGN()">🛰 DFCI IGN (WMTS)</button>
     </div>
+
+    <!-- Cadres Incidents — zone DEMO -->
+    <div id="incidents-panel"></div>
 
     <div id="alert-bar">⚡ PROTOTYPE - Positions simulées - Rafraîchissement : 30s</div>
   </div>
@@ -1540,6 +1658,12 @@ function fetchCommune(n, lat, lon) {
       var nomComm = feat.properties.nom || '';
       var col     = COULEURS_COMMUNE[n];
 
+      // ── Mettre à jour la commune dans le cadre incident ──
+      if (incidentData[n] && incidentData[n].code) {
+        incidentData[n].commune = nomComm;
+        renderIncidentsPanel();
+      }
+
       // Contour pointillé — fillOpacity adaptatif selon zoom (géré par zoomend)
       dfciState[n].commune = L.geoJSON(feat, {
         style: {
@@ -1729,6 +1853,9 @@ function dfciSearch(n) {
 
   // ── F1 : charger et afficher le contour de la commune ──
   fetchCommune(n, center[0], center[1]);
+
+  // ── Ouvrir le cadre incident correspondant ──
+  ouvrirIncident(n, parsed.code2 || parsed.code20 || parsed.full, '');
 }
 
 // Autocompletion pour les 2 champs
@@ -1801,8 +1928,182 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// --- MODE DEMO / EXPLOITATION -----------------------------------------------
-var PIN_CODE  = '1234';   // <- changer ici pour personnaliser
+// --- CADRES INCIDENTS -------------------------------------------------------
+// Ordre de priorité pour le tri des panneaux
+var STATUT_A_PRIORITE = {
+  'traitement': 1, 'encours': 2, 'confirme': 3,
+  'signale': 4, 'noyage': 5, 'termine': 6, '': 99
+};
+
+var STATUT_A_OPTIONS = [
+  { val:'',           label:'— Statut incident —' },
+  { val:'signale',    label:'🟡 Signalé' },
+  { val:'confirme',   label:'🟠 Confirmé' },
+  { val:'traitement', label:'🔴 Traitement' },
+  { val:'encours',    label:'⚫ En Cours' },
+  { val:'noyage',     label:'🔵 Noyage' },
+  { val:'termine',    label:'🟢 Terminé' }
+];
+
+var STATUT_B_OPTIONS = [
+  { val:'',        label:'— Intervention —' },
+  { val:'sdis',    label:'SDIS' },
+  { val:'ccff',    label:'CCFF Local' },
+  { val:'harpon',  label:'CCFF HARPON83' },
+  { val:'onf',     label:'ONF' },
+  { val:'aerien',  label:'AÉRIEN' },
+  { val:'autre1',  label:'Autre 1' },
+  { val:'autre2',  label:'Autre 2' }
+];
+
+// Données de chaque slot (initialisées vides)
+var incidentData = {
+  1: { code:'', commune:'', statutA:'', statutB:'', ts: null,
+       responsable:'', tel:'', moyen:'', acces:'', pointeau:'', observations:'', hdebut:'', hfin:'' },
+  2: { code:'', commune:'', statutA:'', statutB:'', ts: null,
+       responsable:'', tel:'', moyen:'', acces:'', pointeau:'', observations:'', hdebut:'', hfin:'' },
+  3: { code:'', commune:'', statutA:'', statutB:'', ts: null,
+       responsable:'', tel:'', moyen:'', acces:'', pointeau:'', observations:'', hdebut:'', hfin:'' },
+  4: { code:'', commune:'', statutA:'', statutB:'', ts: null,
+       responsable:'', tel:'', moyen:'', acces:'', pointeau:'', observations:'', hdebut:'', hfin:'' }
+};
+
+// Données test fictives (seront remplacées par BDD VPS)
+var FICHE_TEST = {
+  'LD42G6': { responsable:'Martin Bernard', tel:'06 12 34 56 78',
+              moyen:'VL-83-001', acces:'Piste DFCI n°12', pointeau:'PE-LD42-003',
+              observations:'Zone broussailleuse, accès difficile' },
+  'LD43H7': { responsable:'Sophie Roux', tel:'06 98 76 54 32',
+              moyen:'CCF-83-02', acces:'RD 559 puis chemin', pointeau:'PE-LD43-007',
+              observations:'Secteur sous surveillance renforcée' }
+};
+
+function buildSelectHTML(opts, selVal, id, onchange) {
+  var html = '<select class="ic-select" id="'+id+'" onchange="'+onchange+'">';
+  opts.forEach(function(o) {
+    html += '<option value="'+o.val+'"'+(o.val===selVal?' selected':'')+'>'+o.label+'</option>';
+  });
+  html += '</select>';
+  return html;
+}
+
+function getStatutClass(statutA) {
+  var map = {
+    'signale':'ic-statut-signale', 'confirme':'ic-statut-confirme',
+    'traitement':'ic-statut-traitement', 'encours':'ic-statut-encours',
+    'noyage':'ic-statut-noyage', 'termine':'ic-statut-termine'
+  };
+  return map[statutA] || 'ic-statut-default';
+}
+
+function renderIncidentCard(n) {
+  var d   = incidentData[n];
+  var col = COULEURS[n];
+  if (!d.code) return '';
+
+  var fiche = FICHE_TEST[d.code] || {};
+
+  var heureCreation = d.ts ? new Date(d.ts).toTimeString().slice(0,5) : '--:--';
+
+  return '<div class="incident-card" id="ic-card-'+n+'">'
+    // Header coloré selon statut A
+    + '<div class="ic-header '+getStatutClass(d.statutA)+'">'
+    +   '<div class="ic-header-left">'
+    +     '<span class="ic-slot" style="color:'+col.fill+';">'+col.label+'</span>'
+    +     '<span class="ic-code">'+d.code+'</span>'
+    +   '</div>'
+    +   '<button class="ic-close" onclick="fermerIncident('+n+')" title="Fermer">✕</button>'
+    + '</div>'
+    // Commune
+    + '<div class="ic-commune '+getStatutClass(d.statutA)+'">'
+    +   '📍 '+(d.commune || '...')
+    + '</div>'
+    // Body
+    + '<div class="ic-body">'
+    +   '<div class="ic-statuts">'
+    +     buildSelectHTML(STATUT_A_OPTIONS, d.statutA, 'ic-sa-'+n, 'onChangeStatutA('+n+',this.value)')
+    +     buildSelectHTML(STATUT_B_OPTIONS, d.statutB, 'ic-sb-'+n, 'onChangeStatutB('+n+',this.value)')
+    +   '</div>'
+    +   '<div class="ic-grid">'
+    // Ligne 1 : Responsable | Tél
+    +     '<div class="ic-cell"><div class="ic-cell-label">Responsable CCFF</div>'
+    +       '<input class="ic-cell-input" id="ic-resp-'+n+'" value="'+(d.responsable||fiche.responsable||'')+'" placeholder="Nom prénom" onchange="saveField('+n+','responsable',this.value)"/></div>'
+    +     '<div class="ic-cell"><div class="ic-cell-label">Tél</div>'
+    +       '<input class="ic-cell-input" id="ic-tel-'+n+'" value="'+(d.tel||fiche.tel||'')+'" placeholder="06 00 00 00 00" onchange="saveField('+n+','tel',this.value)"/></div>'
+    // Ligne 2 : Moyen engagé | Statut B (affiché dans select)
+    +     '<div class="ic-cell"><div class="ic-cell-label">Moyen engagé</div>'
+    +       '<input class="ic-cell-input" id="ic-moyen-'+n+'" value="'+(d.moyen||fiche.moyen||'')+'" placeholder="VL, CCF..." onchange="saveField('+n+','moyen',this.value)"/></div>'
+    +     '<div class="ic-cell"><div class="ic-cell-label">Point d'eau</div>'
+    +       '<input class="ic-cell-input" id="ic-pe-'+n+'" value="'+(d.pointeau||fiche.pointeau||'')+'" placeholder="Réf. point eau" onchange="saveField('+n+','pointeau',this.value)"/></div>'
+    // Ligne 3 : Accès/Piste | Point d'eau
+    +     '<div class="ic-cell"><div class="ic-cell-label">Accès / Piste</div>'
+    +       '<input class="ic-cell-input" id="ic-acces-'+n+'" value="'+(d.acces||fiche.acces||'')+'" placeholder="Itinéraire..." onchange="saveField('+n+','acces',this.value)"/></div>'
+    +     '<div class="ic-cell"><div class="ic-cell-label">Heure début</div>'
+    +       '<input class="ic-cell-input" id="ic-hdeb-'+n+'" value="'+(d.hdebut||'')+'" placeholder="HH:MM" onchange="saveField('+n+','hdebut',this.value)"/></div>'
+    // Ligne 4 : Observations (pleine largeur)
+    +     '<div class="ic-cell full"><div class="ic-cell-label">Observations</div>'
+    +       '<input class="ic-cell-input" id="ic-obs-'+n+'" value="'+(d.observations||fiche.observations||'')+'" placeholder="Notes libres..." onchange="saveField('+n+','observations',this.value)"/></div>'
+    // Ligne 5 : Heure début | Heure fin
+    +     '<div class="ic-cell"><div class="ic-cell-label">Heure fin</div>'
+    +       '<input class="ic-cell-input" id="ic-hfin-'+n+'" value="'+(d.hfin||'')+'" placeholder="HH:MM" onchange="saveField('+n+','hfin',this.value)"/></div>'
+    +     '<div class="ic-cell"><div class="ic-cell-label">Créé à</div>'
+    +       '<input class="ic-cell-input" value="'+heureCreation+'" placeholder="--:--" readonly style="color:#6a7a8a;"/></div>'
+    +   '</div>'
+    + '</div>'
+    + '</div>';
+}
+
+function renderIncidentsPanel() {
+  if (!modeDemo) return; // Uniquement en mode DEMO
+  var panel = document.getElementById('incidents-panel');
+  if (!panel) return;
+
+  // Trier les slots actifs par priorité statut A, puis chronologique
+  var slots = [1,2,3,4].filter(function(n){ return !!incidentData[n].code; });
+  slots.sort(function(a,b) {
+    var pa = STATUT_A_PRIORITE[incidentData[a].statutA] || 99;
+    var pb = STATUT_A_PRIORITE[incidentData[b].statutA] || 99;
+    if (pa !== pb) return pa - pb;
+    return (incidentData[a].ts || 0) - (incidentData[b].ts || 0);
+  });
+
+  panel.innerHTML = slots.map(function(n){ return renderIncidentCard(n); }).join('');
+}
+
+function ouvrirIncident(n, code, commune) {
+  if (!modeDemo) return; // Uniquement en mode DEMO
+  incidentData[n].code    = code;
+  incidentData[n].commune = commune || '';
+  if (!incidentData[n].ts) incidentData[n].ts = Date.now();
+  renderIncidentsPanel();
+}
+
+function fermerIncident(n) {
+  incidentData[n] = { code:'', commune:'', statutA:'', statutB:'', ts:null,
+    responsable:'', tel:'', moyen:'', acces:'', pointeau:'', observations:'', hdebut:'', hfin:'' };
+  renderIncidentsPanel();
+}
+
+function onChangeStatutA(n, val) {
+  incidentData[n].statutA = val;
+  renderIncidentsPanel();
+  // Remettre le focus sur le select après re-render
+  var el = document.getElementById('ic-sa-'+n);
+  if (el) el.focus();
+}
+
+function onChangeStatutB(n, val) {
+  incidentData[n].statutB = val;
+  saveField(n, 'statutB', val);
+}
+
+function saveField(n, field, val) {
+  incidentData[n][field] = val;
+  // Ici : appel API VPS quand disponible
+}
+
+// MODE DEMO / EXPLOITATION -----------------------------------------------
+var PIN_CODE  = '83086';  // <- changer ici pour personnaliser
 var modeDemo  = false;
 
 function appliquerMode() {
@@ -1836,6 +2137,9 @@ function appliquerMode() {
     btn.classList.remove('demo-actif');
     btn.title = 'Activer le mode demonstration (PIN requis)';
     simulationActive = false;
+    // Masquer le panel incidents en mode exploitation
+    var panel = document.getElementById('incidents-panel');
+    if (panel) panel.innerHTML = '';
     // Retirer les vehicules simules du cluster
     vehicules.forEach(function(v) {
       if (!v.traccarId && markers[v.id]) {
