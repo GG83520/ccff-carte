@@ -1957,6 +1957,8 @@ var STATUT_B_OPTIONS = [
 ];
 
 // Données de chaque slot (initialisées vides)
+var modeDemo  = false;  // déclaré ici pour les cadres incidents
+
 var incidentData = {
   1: { code:'', commune:'', statutA:'', statutB:'', ts: null,
        responsable:'', tel:'', moyen:'', acces:'', pointeau:'', observations:'', hdebut:'', hfin:'' },
@@ -2033,9 +2035,9 @@ function renderIncidentCard(n) {
     // Ligne 2 : Moyen engagé | Statut B (affiché dans select)
     +     '<div class="ic-cell"><div class="ic-cell-label">Moyen engagé</div>'
     +       '<input class="ic-cell-input" id="ic-moyen-'+n+'" value="'+(d.moyen||fiche.moyen||'')+'" placeholder="VL, CCF..." onchange="saveField('+n+','moyen',this.value)"/></div>'
-    +     '<div class="ic-cell"><div class="ic-cell-label">Point d'eau</div>'
+    +     '<div class="ic-cell"><div class="ic-cell-label">Point d&#39;eau</div>'
     +       '<input class="ic-cell-input" id="ic-pe-'+n+'" value="'+(d.pointeau||fiche.pointeau||'')+'" placeholder="Réf. point eau" onchange="saveField('+n+','pointeau',this.value)"/></div>'
-    // Ligne 3 : Accès/Piste | Point d'eau
+    // Ligne 3 : Acces/Piste | Point d'eau
     +     '<div class="ic-cell"><div class="ic-cell-label">Accès / Piste</div>'
     +       '<input class="ic-cell-input" id="ic-acces-'+n+'" value="'+(d.acces||fiche.acces||'')+'" placeholder="Itinéraire..." onchange="saveField('+n+','acces',this.value)"/></div>'
     +     '<div class="ic-cell"><div class="ic-cell-label">Heure début</div>'
@@ -2104,7 +2106,6 @@ function saveField(n, field, val) {
 
 // MODE DEMO / EXPLOITATION -----------------------------------------------
 var PIN_CODE  = '83086';  // <- changer ici pour personnaliser
-var modeDemo  = false;
 
 function appliquerMode() {
   var sidebar = document.getElementById('sidebar');
