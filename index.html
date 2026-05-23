@@ -505,6 +505,8 @@
 
   .dfci-search-label.s1 { color:#ff4444; border-color:#ff4444; background:rgba(255,68,68,0.12); }
   .dfci-search-label.s2 { color:#4488ff; border-color:#4488ff; background:rgba(68,136,255,0.12); }
+  .dfci-search-label.s3 { color:#ff8800; border-color:#ff8800; background:rgba(255,136,0,0.12); }
+  .dfci-search-label.s4 { color:#aa44ff; border-color:#aa44ff; background:rgba(170,68,255,0.12); }
 
   .dfci-search-input {
     width: 148px;
@@ -535,6 +537,10 @@
   .dfci-search-btn.s1:hover { filter:brightness(1.2); }
   .dfci-search-btn.s2 { background:#2255cc; }
   .dfci-search-btn.s2:hover { filter:brightness(1.2); }
+  .dfci-search-btn.s3 { background:#cc6600; }
+  .dfci-search-btn.s3:hover { filter:brightness(1.2); }
+  .dfci-search-btn.s4 { background:#7722cc; }
+  .dfci-search-btn.s4:hover { filter:brightness(1.2); }
 
   .dfci-clear-btn {
     background: #1a1f2e; border: 1px solid #3a4050;
@@ -737,6 +743,26 @@
       <button class="dfci-search-btn s2" onclick="dfciSearch(2)">GO</button>
       <button class="dfci-clear-btn"     onclick="dfciClear(2)"  title="Effacer S2">&#10005;</button>
       <div class="dfci-suggestions" id="dfci-sugg-2"></div>
+    </div>
+    <!-- Recherche 3 : Orange -->
+    <div class="dfci-search-box">
+      <span class="dfci-search-label s3">S3</span>
+      <input class="dfci-search-input s3" id="dfci-input-3" type="text"
+             placeholder="LD42G6 ou .2" maxlength="12"
+             autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <button class="dfci-search-btn s3" onclick="dfciSearch(3)">GO</button>
+      <button class="dfci-clear-btn"     onclick="dfciClear(3)"  title="Effacer S3">&#10005;</button>
+      <div class="dfci-suggestions" id="dfci-sugg-3"></div>
+    </div>
+    <!-- Recherche 4 : Violet -->
+    <div class="dfci-search-box">
+      <span class="dfci-search-label s4">S4</span>
+      <input class="dfci-search-input s4" id="dfci-input-4" type="text"
+             placeholder="LD42G6 ou .2" maxlength="12"
+             autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <button class="dfci-search-btn s4" onclick="dfciSearch(4)">GO</button>
+      <button class="dfci-clear-btn"     onclick="dfciClear(4)"  title="Effacer S4">&#10005;</button>
+      <div class="dfci-suggestions" id="dfci-sugg-4"></div>
     </div>
   </div>
   <div id="header-right">
@@ -1467,12 +1493,16 @@ setInterval(updateClock, 1000);
 // --- RECHERCHE DFCI (double) ------------------------------------------------
 var COULEURS = {
   1: { fill:'#ff4444', marker:'#ff4444', label:'S1' },
-  2: { fill:'#4488ff', marker:'#4488ff', label:'S2' }
+  2: { fill:'#4488ff', marker:'#4488ff', label:'S2' },
+  3: { fill:'#ff8800', marker:'#ff8800', label:'S3' },
+  4: { fill:'#aa44ff', marker:'#aa44ff', label:'S4' }
 };
 
 var dfciState = {
   1: { marker: null, highlight: null, commune: null, communeLabel: null, communeColor: null },
-  2: { marker: null, highlight: null, commune: null, communeLabel: null, communeColor: null }
+  2: { marker: null, highlight: null, commune: null, communeLabel: null, communeColor: null },
+  3: { marker: null, highlight: null, commune: null, communeLabel: null, communeColor: null },
+  4: { marker: null, highlight: null, commune: null, communeLabel: null, communeColor: null }
 };
 
 // ── F1 : opacité remplissage commune selon zoom ────────────────────────────
@@ -1649,7 +1679,7 @@ function dfciSearch(n) {
     dfciState[n].highlight = L.geoJSON(f20, {
       style:{color:col.fill, weight:3, fillColor:col.fill, fillOpacity:0.15}
     }).addTo(map);
-    if (!dfciVisible) toggleDFCI();
+    if (dfciVisible) toggleDFCI();
     return;
   }
 
@@ -1682,7 +1712,7 @@ function dfciSearch(n) {
   }
 
   map.setView(center, zoom, {animate:true});
-  if (!dfciVisible) toggleDFCI();
+  if (dfciVisible) toggleDFCI();
 
   dfciState[n].marker = L.marker(center, {
     icon: L.divIcon({
@@ -1756,8 +1786,10 @@ function initAutoComplete(n) {
 document.addEventListener('DOMContentLoaded', function() {
   initAutoComplete(1);
   initAutoComplete(2);
+  initAutoComplete(3);
+  initAutoComplete(4);
   document.addEventListener('click', function(e) {
-    [1,2].forEach(function(n) {
+    [1,2,3,4].forEach(function(n) {
       var box = document.querySelectorAll('.dfci-search-box')[n-1];
       if (box && !box.contains(e.target)) {
         var sugg = document.getElementById('dfci-sugg-'+n);
