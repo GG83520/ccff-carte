@@ -525,6 +525,8 @@
   }
   .dfci-search-input.s1:focus { border-color:#ff4444; }
   .dfci-search-input.s2:focus { border-color:#4488ff; }
+  .dfci-search-input.s3:focus { border-color:#ff8800; }
+  .dfci-search-input.s4:focus { border-color:#aa44ff; }
   .dfci-search-input::placeholder { color:#7a8aaa; text-transform:none; letter-spacing:0; font-style:italic; font-size:11px; }
 
   .dfci-search-btn {
@@ -1372,7 +1374,7 @@ map.on('zoomend', function() {
   }
   // ── F1 : adapter l'opacité du remplissage commune au niveau de zoom ──
   var opacity = communeFillOpacity(map.getZoom());
-  [1, 2].forEach(function(n) {
+  [1, 2, 3, 4].forEach(function(n) {
     if (dfciState[n].commune) {
       dfciState[n].commune.setStyle({ fillOpacity: opacity });
     }
@@ -1381,7 +1383,7 @@ map.on('zoomend', function() {
 
 // ── F1 : effacer contours communes au clic carte (hors marqueur/popup) ──
 map.on('click', function() {
-  [1,2].forEach(function(n) {
+  [1,2,3,4].forEach(function(n) {
     if (dfciState[n].commune)      { map.removeLayer(dfciState[n].commune);      dfciState[n].commune=null; }
     if (dfciState[n].communeLabel) { map.removeLayer(dfciState[n].communeLabel); dfciState[n].communeLabel=null; }
   });
@@ -1855,7 +1857,7 @@ function dfciSearch(n) {
   fetchCommune(n, center[0], center[1]);
 
   // ── Ouvrir le cadre incident correspondant ──
-  ouvrirIncident(n, parsed.code2 || parsed.code20 || parsed.full, '');
+  ouvrirIncident(n, parsed.full || parsed.code2 || parsed.code20, '');
 }
 
 // Autocompletion pour les 2 champs
@@ -2013,11 +2015,13 @@ function renderIncidentCard(n) {
   var heureCreation = d.ts ? new Date(d.ts).toTimeString().slice(0,5) : '--:--';
   var sA = getStatutClass(d.statutA);
 
-  return '<div class="incident-card" id="ic-card-'+n+'">'
+  var isCollapsed = document.getElementById('ic-card-'+n) ? ' collapsed' : '';
+  return '<div class="incident-card'+isCollapsed+'" id="ic-card-'+n+'">'
     + '<div class="ic-header '+sA+'">'
-    +   '<div class="ic-header-left">'
+    +   '<div class="ic-header-left" onclick="toggleCollapseCard('+n+')" style="flex:1;cursor:pointer;">'
     +     '<span class="ic-slot" style="color:'+col.fill+';">'+col.label+'</span>'
     +     '<span class="ic-code">'+d.code+'</span>'
+    +     '<span class="ic-toggle-icon">▼</span>'
     +   '</div>'
     +   '<button class="ic-close" onclick="fermerIncident('+n+')" title="Fermer">✕</button>'
     + '</div>'
@@ -2081,6 +2085,11 @@ function ouvrirIncident(n, code, commune) {
   incidentData[n].commune = commune || '';
   if (!incidentData[n].ts) incidentData[n].ts = Date.now();
   renderIncidentsPanel();
+}
+
+function toggleCollapseCard(n) {
+  var card = document.getElementById('ic-card-'+n);
+  if (card) card.classList.toggle('collapsed');
 }
 
 function fermerIncident(n) {
