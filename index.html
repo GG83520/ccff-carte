@@ -769,6 +769,27 @@
   .ic-statut-termine    { background: linear-gradient(135deg, #0a4a0a, #063506); }
   .ic-statut-default    { background: linear-gradient(135deg, #1a1f2e, #151922); }
 
+  /* ── VIGIES ── */
+  .vigie-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    pointer-events: all;
+  }
+  .vigie-circle-label {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ff6600;
+    text-shadow: 0 1px 3px #000, 0 0 6px #000;
+    pointer-events: none;
+    white-space: nowrap;
+    text-align: center;
+  }
+
   /* ── Collapse cadres incidents ── */
   .incident-card.collapsed .ic-body    { display: none; }
   .incident-card .ic-header            { cursor: pointer; user-select: none; }
@@ -1071,6 +1092,8 @@
       <button class="layer-btn" id="btn-massifs" onclick="toggleMassifs()">🌲 Massifs forestiers</button>
       <button class="layer-btn" id="btn-dfci" onclick="toggleDFCI()">📐 Carroyage DFCI</button>
       <button class="layer-btn" id="btn-dfci-ign" onclick="toggleDFCI_IGN()">🛰 DFCI IGN (WMTS)</button>
+      <button class="layer-btn" id="btn-vigies" onclick="toggleVigies()">📡 Vigies CCFF</button>
+      <button class="layer-btn" id="btn-vigies-visu" onclick="toggleVisuVigies()" style="display:none;">👁 Cercles de visu</button>
     </div>
 
     <!-- Cadres Incidents — zone DEMO -->
@@ -1418,6 +1441,127 @@ function toggleDFCI() {
     dfciLayer.addTo(map);
     dfciVisible = true;
     btn.classList.add('active');
+  }
+}
+
+// --- VIGIES CCFF VAR --------------------------------------------------------
+var VIGIES_DATA = [
+  { nom:'BAGNOLS-EN-FORET',   lat:43.548342, lon:6.701758,  dfci:'LD44G4.3' },
+  { nom:'BARGUEMON',          lat:43.608,    lon:6.546944,  dfci:'LD44A7.4' },
+  { nom:'DRAGUIGNAN',         lat:43.557222, lon:6.4625,    dfci:'LD24G4.3' },
+  { nom:'FIGANIERES',         lat:43.570556, lon:6.523333,  dfci:'LD24L4.1' },
+  { nom:'GONFARON',           lat:43.326778, lon:6.286694,  dfci:'LD22A0.1' },
+  { nom:'HYERES',             lat:43.1325,   lon:6.120556,  dfci:'LC08E9.1' },
+  { nom:'LE MUY',             lat:43.453889, lon:6.572778,  dfci:'LD42B8.5' },
+  { nom:'LE PRADET',          lat:43.088056, lon:6.040056,  dfci:'LC08B7.4' },
+  { nom:'RAMATUELLE',         lat:43.186389, lon:6.635556,  dfci:'LD40E3.2' },
+  { nom:'RIANS',              lat:43.597889, lon:5.738417,  dfci:'KD64H4.1' },
+  { nom:'ROCBARON',           lat:43.318333, lon:6.081944,  dfci:'LD02C0.4' },
+  { nom:'ST JULIEN LE MONT',  lat:43.691111, lon:5.9075,    dfci:'KD86E0.4' },
+  { nom:'ST PAUL EN FORET',   lat:43.563333, lon:6.720278,  dfci:'LD44H5.4' },
+  { nom:'ST RAPHAEL',         lat:43.431044, lon:6.818817,  dfci:'LD62B7.2' },
+  { nom:'STE MAXIME',         lat:43.365278, lon:6.6125,    dfci:'LD42D3.1' },
+  { nom:'SEILLANS',           lat:43.619697, lon:6.5995,    dfci:'LD44C7.1' },
+  { nom:'SIX FOURS',          lat:43.053292, lon:5.847347,  dfci:'KC88D4.1' },
+  { nom:'SOLLIES PONT',       lat:43.203278, lon:6.036694,  dfci:'LD00A3.5' },
+  { nom:'TAVERNES',           lat:43.613692, lon:6.014483,  dfci:'KD84K6.5' },
+  { nom:'LE THORONET',        lat:43.432147, lon:6.301933,  dfci:'LD22A8.4' },
+  { nom:'VARAGES ST MARTIN',  lat:43.577889, lon:5.9145,    dfci:'KD84E4.3' }
+];
+
+var vigiesLayer    = null;
+var vigiesVisible  = false;
+var visuLayer      = null;
+var visuVisible    = false;
+
+// Icône antenne SVG (orange, adaptée surveillance feux)
+function makeVigieIcon() {
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">'
+    // Mât
+    + '<line x1="14" y1="34" x2="14" y2="12" stroke="#ff6600" stroke-width="2.5" stroke-linecap="round"/>'
+    // Bras horizontaux antenne
+    + '<line x1="6"  y1="16" x2="22" y2="16" stroke="#ff6600" stroke-width="2" stroke-linecap="round"/>'
+    + '<line x1="8"  y1="20" x2="20" y2="20" stroke="#ff6600" stroke-width="1.8" stroke-linecap="round"/>'
+    + '<line x1="10" y1="24" x2="18" y2="24" stroke="#ff6600" stroke-width="1.5" stroke-linecap="round"/>'
+    // Signal ondes
+    + '<path d="M6,8 Q14,2 22,8" stroke="#ff6600" stroke-width="1.5" fill="none" opacity="0.7"/>'
+    + '<path d="M2,5 Q14,-3 26,5" stroke="#ff6600" stroke-width="1.2" fill="none" opacity="0.4"/>'
+    // Point central
+    + '<circle cx="14" cy="12" r="3" fill="#ff6600"/>'
+    + '<circle cx="14" cy="12" r="1.5" fill="#fff"/>'
+    + '</svg>';
+  return L.divIcon({
+    html: svg,
+    className: 'vigie-icon',
+    iconSize: [28, 36],
+    iconAnchor: [14, 34],
+    popupAnchor: [0, -34]
+  });
+}
+
+function toggleVigies() {
+  var btn    = document.getElementById('btn-vigies');
+  var btnVisu = document.getElementById('btn-vigies-visu');
+  if (vigiesVisible) {
+    if (vigiesLayer) map.removeLayer(vigiesLayer);
+    vigiesLayer = null;
+    vigiesVisible = false;
+    btn.classList.remove('active');
+    // Masquer aussi les cercles si affichés
+    if (visuVisible) toggleVisuVigies();
+    if (btnVisu) btnVisu.style.display = 'none';
+  } else {
+    vigiesLayer = L.layerGroup();
+    VIGIES_DATA.forEach(function(v) {
+      var marker = L.marker([v.lat, v.lon], { icon: makeVigieIcon() });
+      var popup = '<div class="popup-inner" style="min-width:200px;">'
+        + '<div class="popup-header">'
+        + '<div class="popup-icon" style="background:#3a1f00;font-size:18px;">📡</div>'
+        + '<div>'
+        + '<div class="popup-title" style="color:#ff6600;">' + v.nom + '</div>'
+        + '<div class="popup-sub">Vigie CCFF — ' + v.dfci + '</div>'
+        + '</div></div>'
+        + '<div class="popup-row"><span class="lbl">DFCI</span><span class="val" style="color:#e8a020;">' + v.dfci + '</span></div>'
+        + '<div class="popup-row"><span class="lbl">Lat</span><span class="val">' + v.lat.toFixed(5) + '</span></div>'
+        + '<div class="popup-row"><span class="lbl">Lon</span><span class="val">' + v.lon.toFixed(5) + '</span></div>'
+        + '<div class="popup-row" style="margin-top:6px;padding-top:6px;border-top:1px solid #1e2733;">'
+        + '<span style="font-size:10px;color:#4a5a6a;font-style:italic;">Champ de vision 360&#176; &#8212; en cours d&#39;&#233;laboration</span>'
+        + '</div>'
+        + '</div>';
+      marker.bindPopup(popup, { className: 'custom-popup', maxWidth: 260 });
+      marker.addTo(vigiesLayer);
+    });
+    vigiesLayer.addTo(map);
+    vigiesVisible = true;
+    btn.classList.add('active');
+    if (btnVisu) btnVisu.style.display = 'block';
+  }
+}
+
+function toggleVisuVigies() {
+  var btn = document.getElementById('btn-vigies-visu');
+  if (visuVisible) {
+    if (visuLayer) map.removeLayer(visuLayer);
+    visuLayer = null;
+    visuVisible = false;
+    if (btn) btn.classList.remove('active');
+  } else {
+    visuLayer = L.layerGroup();
+    VIGIES_DATA.forEach(function(v) {
+      // Cercle de 5km (5000m)
+      L.circle([v.lat, v.lon], {
+        radius: 5000,
+        color: '#ff6600',
+        weight: 1.5,
+        dashArray: '6,4',
+        fillColor: '#ff6600',
+        fillOpacity: 0.04,
+        interactive: false
+      }).addTo(visuLayer);
+    });
+    visuLayer.addTo(map);
+    visuVisible = true;
+    if (btn) btn.classList.add('active');
   }
 }
 
