@@ -2446,6 +2446,12 @@ function pinEntreeValider() {
   if (saisi === PIN_ENTREE) {
     document.getElementById('pin-entree-overlay').classList.add('hidden');
     document.getElementById('pin-entree-input').value = '';
+    // Forcer Leaflet à recalculer la taille de la carte (overlay PIN masquait le rendu)
+    setTimeout(function() {
+      map.invalidateSize();
+      // Forcer aussi le rendu du panel incidents si une recherche a été faite
+      renderIncidentsPanel();
+    }, 100);
   } else {
     var err = document.getElementById('pin-entree-error');
     err.textContent = 'Code incorrect — réessayer';
