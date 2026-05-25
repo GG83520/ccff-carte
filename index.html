@@ -775,6 +775,72 @@
   .ic-toggle-icon                      { font-size: 10px; margin-left: 4px; color: rgba(255,255,255,0.6); display: inline-block; transition: transform 0.2s; }
   .incident-card.collapsed .ic-toggle-icon { transform: rotate(-90deg); }
 
+  /* ── PIN ENTREE — protection accès carto ── */
+  #pin-entree-overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: #0d1117;
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  #pin-entree-overlay.hidden { display: none; }
+  #pin-entree-box {
+    background: #13181f;
+    border: 1px solid #e85d26;
+    border-radius: 12px;
+    padding: 36px 40px;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(232,93,38,0.3);
+    min-width: 300px;
+  }
+  #pin-entree-box .logo {
+    font-size: 40px; margin-bottom: 12px;
+  }
+  #pin-entree-box h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px; font-weight: 700;
+    color: #e85d26; margin-bottom: 4px; letter-spacing: 1px;
+  }
+  #pin-entree-box .subtitle {
+    font-size: 12px; color: #6a7a8a; margin-bottom: 24px;
+    font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.5px;
+  }
+  #pin-entree-input {
+    width: 160px;
+    background: #2a3245;
+    border: 2px solid #4a5570;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 28px;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 10px;
+    text-align: center;
+    padding: 10px 14px;
+    outline: none;
+    margin-bottom: 16px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    transition: border-color 0.2s;
+  }
+  #pin-entree-input:focus { border-color: #e85d26; }
+  #pin-entree-error {
+    font-size: 12px; color: #ef5350;
+    min-height: 18px; margin-bottom: 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+  #pin-entree-btn {
+    background: #e85d26; border: none; border-radius: 6px;
+    color: white; padding: 10px 32px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    letter-spacing: 1px; transition: background 0.15s;
+  }
+  #pin-entree-btn:hover { background: #c94e1e; }
+
   /* PIN overlay */
   #pin-overlay {
     display: none;
@@ -839,6 +905,20 @@
 </style>
 </head>
 <body>
+
+<!-- PIN ENTREE — protection accès carto -->
+<div id="pin-entree-overlay">
+  <div id="pin-entree-box">
+    <div class="logo">🔥</div>
+    <h2>CCFF VAR — SURVEILLANCE</h2>
+    <div class="subtitle">ACCÈS SÉCURISÉ — SAISIR LE CODE</div>
+    <input id="pin-entree-input" type="password" inputmode="numeric"
+           maxlength="4" placeholder="••••"
+           onkeydown="if(event.key==='Enter') pinEntreeValider()"/>
+    <div id="pin-entree-error"></div>
+    <button id="pin-entree-btn" onclick="pinEntreeValider()">ENTRER</button>
+  </div>
+</div>
 
 <!-- HEADER -->
 <div id="header">
@@ -2212,6 +2292,37 @@ var simulationActive = false;  // Désactivée par défaut (mode exploitation)
 window.addEventListener('load', function() {
   // Appliquer le mode après initialisation complete
   setTimeout(function() { appliquerMode(); }, 500);
+});
+
+// --- PIN ENTREE — protection accès carto ----------------------------------------
+var PIN_ENTREE = '4321';
+
+function pinEntreeValider() {
+  var saisi = document.getElementById('pin-entree-input').value;
+  if (saisi === PIN_ENTREE) {
+    document.getElementById('pin-entree-overlay').classList.add('hidden');
+    document.getElementById('pin-entree-input').value = '';
+  } else {
+    var err = document.getElementById('pin-entree-error');
+    err.textContent = 'Code incorrect — réessayer';
+    document.getElementById('pin-entree-input').value = '';
+    document.getElementById('pin-entree-input').focus();
+    // Shake animation
+    var box = document.getElementById('pin-entree-box');
+    box.style.transform = 'translateX(-8px)';
+    setTimeout(function(){ box.style.transform = 'translateX(8px)'; }, 80);
+    setTimeout(function(){ box.style.transform = 'translateX(-6px)'; }, 160);
+    setTimeout(function(){ box.style.transform = 'translateX(0)'; }, 240);
+    setTimeout(function(){ err.textContent = ''; }, 2500);
+  }
+}
+
+// Focuser automatiquement le champ PIN à l'ouverture
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    var inp = document.getElementById('pin-entree-input');
+    if (inp) inp.focus();
+  }, 200);
 });
 
 // --- TRACCAR GPS TEMPS REEL -------------------------------------------------
