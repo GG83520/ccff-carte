@@ -2219,75 +2219,80 @@ function communeAfficher(commune) {
   if (communeContour) { map.removeLayer(communeContour); communeContour = null; }
 
   var code = commune.code;
-  var nom  = commune.nom;
 
-  // Récupérer centre + contour exacts depuis l'API (évite les coords africaines)
-  fetch('https://geo.api.gouv.fr/communes/' + code
-      + '?fields=nom,code,centre,contour&format=json&geometry=contour')
-    .then(function(r) { return r.json(); })
-    .then(function(full) {
-      if (!full || !full.centre) { console.warn('Pas de centre pour', code); return; }
+  // Deux appels parallèles : centre (geometry=centre) + contour (geometry=contour)
+  // car l'API geo.gouv.fr ne renvoie PAS centre si geometry=contour
+  Promise.all([
+    fetch('https://geo.api.gouv.fr/communes/' + code
+        + '?fields=nom,code,centre&format=json&geometry=centre')
+      .then(function(r) { return r.json(); }),
+    fetch('https://geo.api.gouv.fr/communes/' + code
+        + '?fields=contour&format=json&geometry=contour')
+      .then(function(r) { return r.json(); })
+  ])
+  .then(function(results) {
+    var centreData  = results[0];
+    var contourData = results[1];
 
-      var lat = full.centre.coordinates[1];
-      var lon = full.centre.coordinates[0];
+    if (!centreData || !centreData.centre) {
+      console.warn('Pas de centre pour', code); communeInputErreur(); return;
+    }
 
-      // Vérification de cohérence géographique (Var : ~43°N, ~6°E)
-      if (lat < 42.5 || lat > 44.0 || lon < 5.5 || lon > 7.5) {
-        console.warn('Coordonnées hors Var:', lat, lon, '— commune ignorée');
-        communeInputErreur();
-        return;
-      }
+    var lat = centreData.centre.coordinates[1];
+    var lon = centreData.centre.coordinates[0];
+    var nom = centreData.nom;
 
-      // Contour
-      if (full.contour) {
-        communeContour = L.geoJSON(full, {
-          style: {
-            color: '#ff3333', weight: 2.5,
-            fillColor: '#ff3333', fillOpacity: 0.08,
-            dashArray: '6,4'
-          }
-        }).addTo(map);
-      }
+    // Vérification géographique stricte (Var : 42.5–44.0°N, 5.5–7.5°E)
+    if (lat < 42.5 || lat > 44.0 || lon < 5.5 || lon > 7.5) {
+      console.warn('Coordonnées hors Var:', lat, lon); communeInputErreur(); return;
+    }
 
-      // Code DFCI approx
-      var dfciCode = latLonToDFCI(lat, lon);
-
-      // Popup
-      var popupHtml =
-        '<div style="padding:8px 4px;text-align:center;">' +
-        '<div style="font-size:17px;font-weight:700;color:#e8a020;margin-bottom:4px;">' + full.nom + '</div>' +
-        '<div style="font-size:11px;color:#8a9bb0;margin-bottom:8px;">Commune — Var (83) — INSEE ' + code + '</div>' +
-        '<div style="border-top:1px solid #2a3040;padding-top:8px;">' +
-        '<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;">' +
-          '<span style="color:#6a7a8a;">DFCI approx.</span>' +
-          '<span style="color:#e8a020;font-weight:700;">' + dfciCode + '</span>' +
-        '</div>' +
-        '<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;">' +
-          '<span style="color:#6a7a8a;">Coordonnées</span>' +
-          '<span style="color:#e0e0e0;font-size:11px;">' + lat.toFixed(4) + 'N ' + lon.toFixed(4) + 'E</span>' +
-        '</div>' +
-        '</div></div>';
-
-      // Marqueur
-      communeMarker = L.marker([lat, lon], {
-        icon: L.divIcon({
-          className: '',
-          html: '<div style="width:26px;height:26px;background:#e8a020;border:3px solid #fff;' +
-                'border-radius:50%;box-shadow:0 2px 10px rgba(0,0,0,0.6);' +
-                'display:flex;align-items:center;justify-content:center;font-size:13px;">🏘</div>',
-          iconSize: [26,26], iconAnchor: [13,13]
-        })
+    // Contour
+    if (contourData && contourData.contour) {
+      communeContour = L.geoJSON(contourData, {
+        style: { color:'#ff3333', weight:2.5, fillColor:'#ff3333', fillOpacity:0.08, dashArray:'6,4' }
       }).addTo(map);
-      communeMarker.bindPopup(popupHtml, { className:'custom-popup', maxWidth:260 }).openPopup();
+    }
 
-      // Zoom sur la commune
-      if (full.contour) {
-        map.fitBounds(communeContour.getBounds(), { padding: [30,30], maxZoom: 14 });
-      } else {
-        map.setView([lat, lon], 13, { animate: true });
-      }
-    })
-    .catch(function(err) { console.warn('communeAfficher:', err); });
+    // Code DFCI approx
+    var dfciCode = latLonToDFCI(lat, lon);
+
+    // Popup
+    var popupHtml =
+      '<div style="padding:8px 4px;text-align:center;">' +
+      '<div style="font-size:17px;font-weight:700;color:#e8a020;margin-bottom:4px;">' + nom + '</div>' +
+      '<div style="font-size:11px;color:#8a9bb0;margin-bottom:8px;">Commune — Var (83) — INSEE ' + code + '</div>' +
+      '<div style="border-top:1px solid #2a3040;padding-top:8px;">' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;">' +
+        '<span style="color:#6a7a8a;">DFCI approx.</span>' +
+        '<span style="color:#e8a020;font-weight:700;">' + dfciCode + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;">' +
+        '<span style="color:#6a7a8a;">Coordonnées</span>' +
+        '<span style="color:#e0e0e0;font-size:11px;">' + lat.toFixed(4) + 'N  ' + lon.toFixed(4) + 'E</span>' +
+      '</div>' +
+      '</div></div>';
+
+    // Marqueur géocentré
+    communeMarker = L.marker([lat, lon], {
+      icon: L.divIcon({
+        className: '',
+        html: '<div style="width:26px;height:26px;background:#e8a020;border:3px solid #fff;' +
+              'border-radius:50%;box-shadow:0 2px 10px rgba(0,0,0,0.6);' +
+              'display:flex;align-items:center;justify-content:center;font-size:13px;">🏘</div>',
+        iconSize: [26,26], iconAnchor: [13,13]
+      })
+    }).addTo(map);
+    communeMarker.bindPopup(popupHtml, { className:'custom-popup', maxWidth:260 }).openPopup();
+
+    // Zoom : fitBounds sur le contour si disponible, sinon setView
+    if (communeContour) {
+      map.fitBounds(communeContour.getBounds(), { padding:[30,30], maxZoom:14 });
+    } else {
+      map.setView([lat, lon], 13, { animate:true });
+    }
+  })
+  .catch(function(err) { console.warn('communeAfficher:', err); communeInputErreur(); });
 }
 
 function communeInputErreur() {
@@ -2363,7 +2368,8 @@ document.addEventListener('DOMContentLoaded', function() {
   initCommuneSearch();
   document.addEventListener('click', function(e) {
     [1,2,3,4].forEach(function(n) {
-      var box = document.querySelectorAll('.dfci-search-box')[n-1];
+      var inp = document.getElementById('dfci-input-'+n);
+      var box = inp ? inp.closest('.dfci-search-box') : null;
       if (box && !box.contains(e.target)) {
         var sugg = document.getElementById('dfci-sugg-'+n);
         if (sugg) sugg.style.display='none';
