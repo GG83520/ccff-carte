@@ -30,12 +30,27 @@
     background: linear-gradient(135deg, #1a1f2e 0%, #151922 100%);
     border-bottom: 2px solid #e85d26;
     padding: 0 16px;
-    height: 52px;
+    height: 90px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    z-index: 1000;
+  }
+  #header-row1 {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    height: 46px;
     flex-shrink: 0;
-    z-index: 1000;
+    border-bottom: 1px solid #1e2733;
+  }
+  #header-row2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 8px;
+    padding: 0 4px;
   }
 
   #header-left {
@@ -339,6 +354,12 @@
 
   .layer-btn:hover { background: #1e2733; color: #fff; }
   .layer-btn.active { background: #e85d26; border-color: #e85d26; color: #fff; }
+  .layer-btn.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+    color: #4a5570 !important;
+  }
 
   /* Popup personnalisé */
   .custom-popup .leaflet-popup-content-wrapper {
@@ -543,6 +564,11 @@
   .dfci-search-btn.s3:hover { filter:brightness(1.2); }
   .dfci-search-btn.s4 { background:#7722cc; }
   .dfci-search-btn.s4:hover { filter:brightness(1.2); }
+  .dfci-search-label.sc { color:#e8a020; border-color:#e8a020; background:rgba(232,160,32,0.12); }
+  .dfci-search-input.sc { width:140px; }
+  .dfci-search-input.sc:focus { border-color:#e8a020; }
+  .dfci-search-btn.sc { background:#a06810; }
+  .dfci-search-btn.sc:hover { filter:brightness(1.2); }
 
   .dfci-clear-btn {
     background: #1a1f2e; border: 1px solid #3a4050;
@@ -943,58 +969,69 @@
 
 <!-- HEADER -->
 <div id="header">
-  <div id="header-left">
-    <div class="header-logo">🔥</div>
-    <h1>CCFF VAR - <span>SURVEILLANCE FEUX DE FORÊT</span></h1>
+  <!-- Ligne 1 : Titre + Mode + Horloge -->
+  <div id="header-row1">
+    <div id="header-left">
+      <div class="header-logo">🔥</div>
+      <h1>CCFF VAR - <span>SURVEILLANCE FEUX DE FORÊT</span></h1>
+    </div>
+    <div id="header-right">
+      <button id="mode-btn" onclick="toggleModeDemo()">&#9881; MODE DEMO</button>
+      <div class="status-pill" id="proto-pill">PROTOTYPE &#8226; DONNEES SIMULEES</div>
+      <div>
+        <div id="clock">--:--:--</div>
+        <div id="date-display">Chargement...</div>
+      </div>
+    </div>
   </div>
-  <div id="header-center">
-    <!-- Recherche 1 : Rouge -->
+  <!-- Ligne 2 : S1 S2 S3 S4 + Commune -->
+  <div id="header-row2">
     <div class="dfci-search-box">
       <span class="dfci-search-label s1">S1</span>
       <input class="dfci-search-input s1" id="dfci-input-1" type="text"
              placeholder="LD42G6 ou .2" maxlength="12"
              autocomplete="off" autocorrect="off" spellcheck="false"/>
       <button class="dfci-search-btn s1" onclick="dfciSearch(1)">GO</button>
-      <button class="dfci-clear-btn"     onclick="dfciClear(1)"  title="Effacer S1">&#10005;</button>
+      <button class="dfci-clear-btn" onclick="dfciClear(1)" title="Effacer S1">&#10005;</button>
       <div class="dfci-suggestions" id="dfci-sugg-1"></div>
     </div>
-    <!-- Recherche 2 : Bleu -->
     <div class="dfci-search-box">
       <span class="dfci-search-label s2">S2</span>
       <input class="dfci-search-input s2" id="dfci-input-2" type="text"
              placeholder="LD42G6 ou .2" maxlength="12"
              autocomplete="off" autocorrect="off" spellcheck="false"/>
       <button class="dfci-search-btn s2" onclick="dfciSearch(2)">GO</button>
-      <button class="dfci-clear-btn"     onclick="dfciClear(2)"  title="Effacer S2">&#10005;</button>
+      <button class="dfci-clear-btn" onclick="dfciClear(2)" title="Effacer S2">&#10005;</button>
       <div class="dfci-suggestions" id="dfci-sugg-2"></div>
     </div>
-    <!-- Recherche 3 : Orange -->
     <div class="dfci-search-box">
       <span class="dfci-search-label s3">S3</span>
       <input class="dfci-search-input s3" id="dfci-input-3" type="text"
              placeholder="LD42G6 ou .2" maxlength="12"
              autocomplete="off" autocorrect="off" spellcheck="false"/>
       <button class="dfci-search-btn s3" onclick="dfciSearch(3)">GO</button>
-      <button class="dfci-clear-btn"     onclick="dfciClear(3)"  title="Effacer S3">&#10005;</button>
+      <button class="dfci-clear-btn" onclick="dfciClear(3)" title="Effacer S3">&#10005;</button>
       <div class="dfci-suggestions" id="dfci-sugg-3"></div>
     </div>
-    <!-- Recherche 4 : Violet -->
     <div class="dfci-search-box">
       <span class="dfci-search-label s4">S4</span>
       <input class="dfci-search-input s4" id="dfci-input-4" type="text"
              placeholder="LD42G6 ou .2" maxlength="12"
              autocomplete="off" autocorrect="off" spellcheck="false"/>
       <button class="dfci-search-btn s4" onclick="dfciSearch(4)">GO</button>
-      <button class="dfci-clear-btn"     onclick="dfciClear(4)"  title="Effacer S4">&#10005;</button>
+      <button class="dfci-clear-btn" onclick="dfciClear(4)" title="Effacer S4">&#10005;</button>
       <div class="dfci-suggestions" id="dfci-sugg-4"></div>
     </div>
-  </div>
-  <div id="header-right">
-    <button id="mode-btn" onclick="toggleModeDemo()">&#9881; MODE DEMO</button>
-    <div class="status-pill" id="proto-pill">PROTOTYPE &#8226; DONNEES SIMULEES</div>
-    <div>
-      <div id="clock">--:--:--</div>
-      <div id="date-display">Chargement...</div>
+    <div style="width:1px;height:22px;background:#2a3040;flex-shrink:0;margin:0 2px;"></div>
+    <!-- Recherche Commune -->
+    <div class="dfci-search-box" id="commune-search-box">
+      <span class="dfci-search-label sc">🏘</span>
+      <input class="dfci-search-input sc" id="commune-input" type="text"
+             placeholder="Commune (Var)…" maxlength="60"
+             autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <button class="dfci-search-btn sc" onclick="communeSearch()">GO</button>
+      <button class="dfci-clear-btn" onclick="communeClear()" title="Effacer commune">&#10005;</button>
+      <div class="dfci-suggestions" id="commune-sugg"></div>
     </div>
   </div>
 </div>
@@ -1089,8 +1126,8 @@
       <button class="layer-btn" onclick="setLayer('esri-topo')">🗾 Topo Esri</button>
       <div style="border-top:1px solid #2a3040;margin:4px 0;"></div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:#6a7a8a;letter-spacing:1px;padding:2px 4px 4px;">COUCHES</div>
-      <button class="layer-btn" id="btn-massifs" onclick="toggleMassifs()">🌲 Massifs forestiers</button>
-      <button class="layer-btn" id="btn-dfci" onclick="toggleDFCI()">📐 Carroyage DFCI</button>
+      <button class="layer-btn disabled" id="btn-massifs" title="Couche temporairement désactivée">🌲 Massifs forestiers</button>
+      <button class="layer-btn disabled" id="btn-dfci" title="Couche en cours de refonte">📐 Carroyage DFCI</button>
       <button class="layer-btn" id="btn-dfci-ign" onclick="toggleDFCI_IGN()">🛰 DFCI IGN (WMTS)</button>
       <button class="layer-btn" id="btn-vigies" onclick="toggleVigies()">📡 Vigies CCFF</button>
       <button class="layer-btn" id="btn-vigies-visu" onclick="toggleVisuVigies()" style="display:none;">👁 Cercles de visu</button>
@@ -2144,11 +2181,186 @@ function initAutoComplete(n) {
   });
 }
 
+
+// --- RECHERCHE PAR COMMUNE (Var dept 83) ------------------------------------
+var communeMarker  = null;
+var communeContour = null;
+
+function communeClear() {
+  var inp = document.getElementById('commune-input');
+  if (inp) inp.value = '';
+  var sugg = document.getElementById('commune-sugg');
+  if (sugg) sugg.style.display = 'none';
+  if (communeMarker)  { map.removeLayer(communeMarker);  communeMarker  = null; }
+  if (communeContour) { map.removeLayer(communeContour); communeContour = null; }
+}
+
+function communeSearch() {
+  var val = document.getElementById('commune-input').value.trim();
+  if (!val || val.length < 2) return;
+  document.getElementById('commune-sugg').style.display = 'none';
+  // Recherche strictement dans le Var (codeDepartement=83)
+  fetch('https://geo.api.gouv.fr/communes?nom=' + encodeURIComponent(val)
+      + '&codeDepartement=83&fields=nom,code,centre,contour&format=json&geometry=centre&limit=5')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data || data.length === 0) {
+        communeInputErreur();
+        return;
+      }
+      // Prendre la première — si plusieurs résultats, la suggestion a déjà filtré
+      communeAfficher(data[0]);
+    })
+    .catch(function(err) { console.warn('communeSearch:', err); communeInputErreur(); });
+}
+
+function communeAfficher(commune) {
+  if (communeMarker)  { map.removeLayer(communeMarker);  communeMarker  = null; }
+  if (communeContour) { map.removeLayer(communeContour); communeContour = null; }
+
+  var code = commune.code;
+  var nom  = commune.nom;
+
+  // Récupérer centre + contour exacts depuis l'API (évite les coords africaines)
+  fetch('https://geo.api.gouv.fr/communes/' + code
+      + '?fields=nom,code,centre,contour&format=json&geometry=contour')
+    .then(function(r) { return r.json(); })
+    .then(function(full) {
+      if (!full || !full.centre) { console.warn('Pas de centre pour', code); return; }
+
+      var lat = full.centre.coordinates[1];
+      var lon = full.centre.coordinates[0];
+
+      // Vérification de cohérence géographique (Var : ~43°N, ~6°E)
+      if (lat < 42.5 || lat > 44.0 || lon < 5.5 || lon > 7.5) {
+        console.warn('Coordonnées hors Var:', lat, lon, '— commune ignorée');
+        communeInputErreur();
+        return;
+      }
+
+      // Contour
+      if (full.contour) {
+        communeContour = L.geoJSON(full, {
+          style: {
+            color: '#ff3333', weight: 2.5,
+            fillColor: '#ff3333', fillOpacity: 0.08,
+            dashArray: '6,4'
+          }
+        }).addTo(map);
+      }
+
+      // Code DFCI approx
+      var dfciCode = latLonToDFCI(lat, lon);
+
+      // Popup
+      var popupHtml =
+        '<div style="padding:8px 4px;text-align:center;">' +
+        '<div style="font-size:17px;font-weight:700;color:#e8a020;margin-bottom:4px;">' + full.nom + '</div>' +
+        '<div style="font-size:11px;color:#8a9bb0;margin-bottom:8px;">Commune — Var (83) — INSEE ' + code + '</div>' +
+        '<div style="border-top:1px solid #2a3040;padding-top:8px;">' +
+        '<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;">' +
+          '<span style="color:#6a7a8a;">DFCI approx.</span>' +
+          '<span style="color:#e8a020;font-weight:700;">' + dfciCode + '</span>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;">' +
+          '<span style="color:#6a7a8a;">Coordonnées</span>' +
+          '<span style="color:#e0e0e0;font-size:11px;">' + lat.toFixed(4) + 'N ' + lon.toFixed(4) + 'E</span>' +
+        '</div>' +
+        '</div></div>';
+
+      // Marqueur
+      communeMarker = L.marker([lat, lon], {
+        icon: L.divIcon({
+          className: '',
+          html: '<div style="width:26px;height:26px;background:#e8a020;border:3px solid #fff;' +
+                'border-radius:50%;box-shadow:0 2px 10px rgba(0,0,0,0.6);' +
+                'display:flex;align-items:center;justify-content:center;font-size:13px;">🏘</div>',
+          iconSize: [26,26], iconAnchor: [13,13]
+        })
+      }).addTo(map);
+      communeMarker.bindPopup(popupHtml, { className:'custom-popup', maxWidth:260 }).openPopup();
+
+      // Zoom sur la commune
+      if (full.contour) {
+        map.fitBounds(communeContour.getBounds(), { padding: [30,30], maxZoom: 14 });
+      } else {
+        map.setView([lat, lon], 13, { animate: true });
+      }
+    })
+    .catch(function(err) { console.warn('communeAfficher:', err); });
+}
+
+function communeInputErreur() {
+  var inp = document.getElementById('commune-input');
+  if (!inp) return;
+  inp.style.borderColor = '#ef5350';
+  setTimeout(function() { inp.style.borderColor = ''; }, 2000);
+}
+
+function latLonToDFCI(lat, lon) {
+  // Conversion approx lat/lon → code DFCI 2km (algorithme IGN simplifié)
+  var col100 = Math.floor((lon + 6) / 1);
+  var row100  = Math.floor((lat)    / 0.5);
+  var L1 = String.fromCharCode(65 + Math.floor(col100 / 5));
+  var L2 = String.fromCharCode(65 + Math.floor(row100 / 5));
+  var D1 = (col100 % 5).toString();
+  var D2 = (row100 % 5).toString();
+  var subLon = (lon + 6) - Math.floor((lon + 6) / 1);
+  var subLat  = lat / 0.5 - Math.floor(lat / 0.5);
+  var subCol  = Math.min(4, Math.floor(subLon / 0.2));
+  var subRow   = Math.min(4, Math.floor(subLat * 10));
+  var lettreIdx = Math.floor(subRow / 2) * 5 + subCol;
+  lettreIdx = Math.min(9, lettreIdx);
+  var lettre = String.fromCharCode(65 + lettreIdx);
+  var chiffre = (subCol % 5) + 1;
+  return L1 + L2 + D1 + D2 + lettre + chiffre;
+}
+
+function initCommuneSearch() {
+  var inp  = document.getElementById('commune-input');
+  var sugg = document.getElementById('commune-sugg');
+  if (!inp || !sugg) return;
+
+  inp.addEventListener('input', function() {
+    var val = inp.value.trim();
+    sugg.innerHTML = '';
+    sugg.style.display = 'none';
+    if (val.length < 2) return;
+    // Recherche STRICTEMENT dans le Var
+    fetch('https://geo.api.gouv.fr/communes?nom=' + encodeURIComponent(val)
+        + '&codeDepartement=83&fields=nom,code&format=json&limit=8')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || data.length === 0) return;
+        sugg.style.display = 'block';
+        data.forEach(function(com) {
+          var div = document.createElement('div');
+          div.className = 'dfci-suggestion';
+          div.innerHTML = '<span class="dfci-sug-code" style="color:#e8a020;">' + com.nom + '</span>'
+                        + '<span class="dfci-sug-type">83 — ' + com.code + '</span>';
+          div.onclick = function() {
+            inp.value = com.nom;
+            sugg.style.display = 'none';
+            communeAfficher(com);
+          };
+          sugg.appendChild(div);
+        });
+      })
+      .catch(function() {});
+  });
+
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter')  { communeSearch(); sugg.style.display = 'none'; }
+    if (e.key === 'Escape') sugg.style.display = 'none';
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   initAutoComplete(1);
   initAutoComplete(2);
   initAutoComplete(3);
   initAutoComplete(4);
+  initCommuneSearch();
   document.addEventListener('click', function(e) {
     [1,2,3,4].forEach(function(n) {
       var box = document.querySelectorAll('.dfci-search-box')[n-1];
@@ -2157,6 +2369,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (sugg) sugg.style.display='none';
       }
     });
+    // Fermer suggestions commune si clic ailleurs
+    var cbox = document.getElementById('commune-search-box');
+    if (cbox && !cbox.contains(e.target)) {
+      var cs = document.getElementById('commune-sugg');
+      if (cs) cs.style.display = 'none';
+    }
   });
 });
 
