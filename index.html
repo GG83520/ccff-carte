@@ -879,9 +879,37 @@
     color: white; padding: 10px 32px;
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 15px; font-weight: 700; cursor: pointer;
-    letter-spacing: 1px; transition: background 0.15s;
+    letter-spacing: 1px; transition: background 0.15s, opacity 0.3s;
   }
   #pin-entree-btn:hover { background: #c94e1e; }
+  #pin-entree-btn:disabled {
+    background: #3a3a3a; cursor: not-allowed; opacity: 0.6;
+  }
+  #dfci-loading-bar {
+    margin-top: 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    color: #6a7a8a;
+    letter-spacing: 1px;
+    min-height: 18px;
+    transition: opacity 0.5s;
+  }
+  #dfci-loading-bar.pret {
+    color: #4caf50;
+  }
+  .dfci-spinner {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 2px solid #4a5570;
+    border-top-color: #e85d26;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
 
   /* PIN overlay */
   #pin-overlay {
@@ -958,7 +986,10 @@
            maxlength="4" placeholder="••••"
            onkeydown="if(event.key==='Enter') pinEntreeValider()"/>
     <div id="pin-entree-error"></div>
-    <button id="pin-entree-btn" onclick="pinEntreeValider()">ENTRER</button>
+    <button id="pin-entree-btn" onclick="pinEntreeValider()" disabled>ENTRER</button>
+    <div id="dfci-loading-bar">
+      <span class="dfci-spinner"></span>Chargement données DFCI…
+    </div>
   </div>
 </div>
 
@@ -1118,7 +1149,7 @@
       <button class="layer-btn active" onclick="setLayer('osm')">🗺 OpenStreetMap</button>
       <button class="layer-btn" onclick="setLayer('osm-topo')">🏔 Topo (OpenTopoMap)</button>
       <button class="layer-btn" onclick="setLayer('satellite')">🛰 Satellite Esri</button>
-      <button class="layer-btn" onclick="setLayer('esri-topo')">🗾 Topo Esri</button>
+      <button class="layer-btn" onclick="setLayer('ign-topo')">🗺 IGN SCAN25</button>
       <div style="border-top:1px solid #2a3040;margin:4px 0;"></div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:#6a7a8a;letter-spacing:1px;padding:2px 4px 4px;">COUCHES</div>
       <button class="layer-btn disabled" id="btn-massifs" title="Couche temporairement désactivée">🌲 Massifs forestiers</button>
@@ -1128,9 +1159,9 @@
       <button class="layer-btn" id="btn-vigies-visu" onclick="toggleVisuVigies()" style="display:none;">👁 Cercles de visu</button>
       <div style="border-top:1px solid #2a3040;margin:4px 0;"></div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:#4caf50;letter-spacing:1px;padding:2px 4px 4px;">PATROUILLES LIVE</div>
-      <button class="layer-btn wms-cii" id="btn-wms-patrouille" onclick="toggleWMS('patrouille')">🚶 Patrouilles actives</button>
-      <button class="layer-btn wms-cii" id="btn-wms-patrouille-txt" onclick="toggleWMS('patrouille_txt')">📋 Détail patrouilles</button>
-      <button class="layer-btn wms-cii" id="btn-wms-vigie" onclick="toggleWMS('vigie')">🔭 Vigies live (CII)</button>
+      <button class="layer-btn wms-cii disabled" id="btn-wms-patrouille" title="En cours d'investigation — données non fiables">🚶 Patrouilles actives</button>
+      <button class="layer-btn wms-cii disabled" id="btn-wms-patrouille-txt" title="En cours d'investigation — données non fiables">📋 Détail patrouilles</button>
+      <button class="layer-btn wms-cii disabled" id="btn-wms-vigie" title="En cours d'investigation — données non fiables">🔭 Vigies live (CII)</button>
     </div>
 
     <!-- Cadres Incidents — zone DEMO -->
@@ -1166,34 +1197,8 @@ try {
   console.warn('[BC] BroadcastChannel non supporté:', e);
 }
 
-// --- DONNÉES VÉHICULES SIMULÉS -----------------------------------------------
-const vehicules = [
-  // 4x4 / VLTT (vert)
-  { id:1,  nom:'VL-83-001', type:'4x4',  secteur:'Maures',      lat:43.330, lng:6.420, statut:'patrouille', vitesse:38, equipe:'Bernard / Roux',      heure:'14:18' },
-  { id:2,  nom:'VL-83-002', type:'4x4',  secteur:'Maures',      lat:43.288, lng:6.389, statut:'patrouille', vitesse:22, equipe:'Martin / Dupont',     heure:'14:21' },
-  { id:3,  nom:'VL-83-003', type:'4x4',  secteur:'Maures',      lat:43.350, lng:6.510, statut:'attente',    vitesse:0,  equipe:'Fabre / Girard',      heure:'14:15' },
-  { id:4,  nom:'VL-83-004', type:'4x4',  secteur:'Esterel',     lat:43.470, lng:6.850, statut:'patrouille', vitesse:45, equipe:'Blanc / Morel',       heure:'14:22' },
-  { id:5,  nom:'VL-83-005', type:'4x4',  secteur:'Esterel',     lat:43.515, lng:6.780, statut:'patrouille', vitesse:31, equipe:'Petit / Garnier',     heure:'14:20' },
-  { id:6,  nom:'VL-83-006', type:'4x4',  secteur:'Esterel',     lat:43.490, lng:6.920, statut:'patrouille', vitesse:28, equipe:'Lefebvre / Simon',    heure:'14:19' },
-  { id:7,  nom:'VL-83-007', type:'4x4',  secteur:'Sainte-Baume',lat:43.320, lng:5.790, statut:'patrouille', vitesse:19, equipe:'Laurent / Michel',    heure:'14:23' },
-  { id:8,  nom:'VL-83-008', type:'4x4',  secteur:'Sainte-Baume',lat:43.355, lng:5.850, statut:'attente',    vitesse:0,  equipe:'Leroy / Moreau',      heure:'14:10' },
-  { id:9,  nom:'VL-83-009', type:'4x4',  secteur:'Haut-Var',   lat:43.565, lng:6.030, statut:'patrouille', vitesse:33, equipe:'David / Robert',      heure:'14:21' },
-  { id:10, nom:'VL-83-010', type:'4x4',  secteur:'Centre-Var',      lat:43.420, lng:6.110, statut:'patrouille', vitesse:52, equipe:'Thomas / Richard',    heure:'14:22' },
-  { id:11, nom:'VL-83-011', type:'4x4',  secteur:'Centre-Var',      lat:43.390, lng:5.970, statut:'hs',         vitesse:0,  equipe:'-',                   heure:'11:30' },
-  { id:12, nom:'VL-83-012', type:'4x4',  secteur:'Maures',      lat:43.265, lng:6.340, statut:'patrouille', vitesse:27, equipe:'Durand / Bertrand',   heure:'14:20' },
-
-  // Porteurs d'eau / CCF (bleu)
-  { id:13, nom:'CCF-83-01', type:'eau',  secteur:'Maures',      lat:43.305, lng:6.460, statut:'patrouille', vitesse:18, equipe:'Mercier / Chevalier', heure:'14:17' },
-  { id:14, nom:'CCF-83-02', type:'eau',  secteur:'Esterel',     lat:43.455, lng:6.800, statut:'patrouille', vitesse:15, equipe:'Fournier / Rousseau', heure:'14:21' },
-  { id:15, nom:'CCF-83-03', type:'eau',  secteur:'Sainte-Baume',lat:43.340, lng:5.820, statut:'attente',    vitesse:0,  equipe:'Vincent / Morin',     heure:'14:05' },
-  { id:16, nom:'CCF-83-04', type:'eau',  secteur:'Haut-Var',   lat:43.545, lng:6.060, statut:'patrouille', vitesse:12, equipe:'Leclerc / Simon',     heure:'14:19' },
-  { id:17, nom:'CCF-83-05', type:'eau',  secteur:'Centre-Var',      lat:43.440, lng:6.050, statut:'attente',    vitesse:0,  equipe:'Gérard / André',      heure:'14:08' },
-  { id:18, nom:'CCF-83-06', type:'eau',  secteur:'Maures',      lat:43.275, lng:6.500, statut:'hs',         vitesse:0,  equipe:'-',                   heure:'10:45' },
-
-  // Commandement (rouge)
-  { id:19, nom:'VPC-83-01', type:'cmd',  secteur:'Maures',      lat:43.315, lng:6.550, statut:'patrouille', vitesse:0,  equipe:'Cdt. Arnaud',         heure:'14:23' },
-  { id:20, nom:'VPC-83-02', type:'cmd',  secteur:'Esterel',     lat:43.480, lng:6.860, statut:'patrouille', vitesse:0,  equipe:'Cdt. Legrand',        heure:'14:22' },
-];
+// --- DONNÉES VÉHICULES — vide en mode TERRAIN (données réelles via MyFleet24)
+const vehicules = []; // Aucun véhicule simulé en mode TERRAIN
 
 // --- MASSIFS FORESTIERS DU VAR - 9 massifs officiels (Annexe 2) ---------------
 const massifs = [
@@ -1313,9 +1318,12 @@ const layers = {
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     { maxZoom: 19, attribution: '© Esri World Imagery' }
   ),
-  'esri-topo': L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-    { maxZoom: 19, attribution: '© Esri World Topo' }
+  'ign-topo': L.tileLayer(
+    'https://data.geopf.fr/private/wmts?apikey=ign_scan_ws' +
+    '&LAYER=GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN25TOUR&EXCEPTIONS=text/xml' +
+    '&FORMAT=image/jpeg&SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile' +
+    '&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
+    { maxNativeZoom: 16, maxZoom: 18, attribution: '© IGN Géoportail &mdash; SCAN25' }
   )
 };
 
@@ -2090,7 +2098,7 @@ function dfciSearch(n) {
     dfciState[n].highlight = L.geoJSON(f20, {
       style:{color:col.fill, weight:3, fillColor:col.fill, fillOpacity:0.15}
     }).addTo(map);
-    if (dfciVisible) toggleDFCI();
+    // Ne pas interférer avec les couches d'affichage DFCI
     return;
   }
 
@@ -2123,7 +2131,7 @@ function dfciSearch(n) {
   }
 
   map.setView(center, zoom, {animate:true});
-  if (dfciVisible) toggleDFCI();
+  // Ne pas interférer avec les couches d'affichage DFCI
 
   dfciState[n].marker = L.marker(center, {
     icon: L.divIcon({
@@ -2586,6 +2594,10 @@ function appliquerMode() {
         }
       }
     });
+    // Afficher les véhicules MyFleet24 en mode DEMO
+    Object.keys(myfleetMarkers).forEach(function(lbl) {
+      if (!map.hasLayer(myfleetMarkers[lbl])) map.addLayer(myfleetMarkers[lbl]);
+    });
     renderList(document.getElementById('secteur-filter').value);
   } else {
     // ── MODE EXPLOITATION : carte epuree ─────────────────────────────
@@ -2605,6 +2617,10 @@ function appliquerMode() {
           clusterGroup.removeLayer(markers[v.id].marker);
         }
       }
+    });
+    // Masquer les véhicules MyFleet24 en mode EXPLOITATION
+    Object.keys(myfleetMarkers).forEach(function(lbl) {
+      if (map.hasLayer(myfleetMarkers[lbl])) map.removeLayer(myfleetMarkers[lbl]);
     });
   }
 }
@@ -2689,6 +2705,61 @@ window.addEventListener('load', function() {
   }, 200);
 });
 
+// ── Indicateur chargement DFCI ───────────────────────────────────────────────
+// dfci_official.js définit DFCI_2KM et DFCI_20KM — on attend qu'ils soient dispo
+(function waitDFCI() {
+  var bar = document.getElementById('dfci-loading-bar');
+  var btn = document.getElementById('pin-entree-btn');
+
+  function check() {
+    // Vérification stricte : objets présents ET features complètement chargées
+    // DFCI_2KM = 3827 carreaux — seuil 3000 pour garantir le chargement complet
+    var ok2km  = (typeof DFCI_2KM  !== 'undefined' && DFCI_2KM  !== null
+                  && DFCI_2KM.features  && DFCI_2KM.features.length  >= 3000);
+    var ok20km = (typeof DFCI_20KM !== 'undefined' && DFCI_20KM !== null
+                  && DFCI_20KM.features && DFCI_20KM.features.length >= 10);
+
+    if (ok2km && ok20km) {
+      // DFCI chargé — débloquer le bouton
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'ENTRER';
+      }
+      if (bar) {
+        bar.innerHTML = '&#x2714;&nbsp;Données DFCI prêtes — ' + DFCI_2KM.features.length + ' carreaux';
+        bar.classList.add('pret');
+        // Masquer après 3 secondes
+        setTimeout(function() { bar.style.opacity = '0'; }, 3000);
+      }
+      // Focus automatique sur le champ PIN
+      setTimeout(function() {
+        var inp = document.getElementById('pin-entree-input');
+        if (inp) inp.focus();
+      }, 100);
+    } else {
+      // Pas encore prêt — réessayer dans 200ms
+      if (bar) {
+        // Animer le message pour montrer que ça charge
+        var dots = (bar._dots || 0) % 4;
+        bar._dots = dots + 1;
+        var d = '.'.repeat(dots);
+        var nb2km = (typeof DFCI_2KM !== 'undefined' && DFCI_2KM && DFCI_2KM.features)
+                    ? DFCI_2KM.features.length : 0;
+        var progTxt = nb2km > 0 ? ' (' + nb2km + '/3827)' : '';
+        bar.innerHTML = '<span class="dfci-spinner"></span>Chargement données DFCI' + progTxt + d;
+      }
+      setTimeout(check, 200);
+    }
+  }
+
+  // Démarrer la vérification après le chargement de la page
+  if (document.readyState === 'complete') {
+    check();
+  } else {
+    window.addEventListener('load', check);
+  }
+})();
+
 
 // --- COUCHES WMS CII TÉLÉCOM — Patrouilles & Vigies live --------------------
 var WMS_BASE = 'https://carto.tre.telealerte.net/mapserver/18712001/wms-admin/';
@@ -2752,82 +2823,55 @@ function clearWMSTimers() {
   });
 }
 
+// Traccar supprimé — remplacé par MyFleet24
+
 // --- MYFLEET24 GPS TEMPS REEL -----------------------------------------------
 // API fournisseur local CCFF Roquebrune
 var MYFLEET_URL = 'http://212.227.9.177/MYFLEET24_WEB/FR/LocationAPIv0.awp'
                 + '?ID=38&METHOD=GETPARK&KEY=ROCHER&PASS=CCFF2&FORMAT=JS';
-var MYFLEET_INTERVAL = 60000; // 60s pour commencer — descendre à 30s quand validé
+var MYFLEET_INTERVAL = 60000; // 60s pour commencer
 var myfleetActif = false;
-var myfleetMarkers = {}; // { label: L.marker }
+var myfleetMarkers = {};
 
-// Labels connus R1-R11 — tous traités comme VLTT CCFF (pick-up orange)
-// Le type sera affiné si besoin ultérieurement
-function myfleetLabel(label) {
-  return 'CCFF-' + label; // ex: CCFF-R4
-}
+function myfleetLabel(label) { return 'CCFF-' + label; }
 
-// ── Icône SVG pick-up CCFF orange ──────────────────────────────────────────
 function makeMyfleetIcon(label, fixgps, speed) {
-  // Couleur selon état
   var col    = fixgps === 0 ? '#999999' : speed > 2 ? '#ff6600' : '#ffaa00';
   var shadow = fixgps === 0 ? '#66666688' : speed > 2 ? '#ff660066' : '#ffaa0066';
   var w = 44, h = 28;
-  // SVG pick-up vue de dessus stylisé CCFF
   var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 44 28">'
-    // Ombre portée
     + '<ellipse cx="22" cy="25" rx="16" ry="3" fill="' + shadow + '"/>'
-    // Carrosserie principale
     + '<rect x="4" y="8" width="36" height="14" rx="4" fill="' + col + '"/>'
-    // Cabine
     + '<rect x="10" y="4" width="18" height="12" rx="3" fill="' + col + '" stroke="#fff" stroke-width="0.8" opacity="0.9"/>'
-    // Vitres cabine
     + '<rect x="12" y="5.5" width="6" height="7" rx="1.5" fill="#b3d9ff" opacity="0.8"/>'
     + '<rect x="20" y="5.5" width="6" height="7" rx="1.5" fill="#b3d9ff" opacity="0.8"/>'
-    // Bande réfléchissante jaune
     + '<rect x="4" y="13" width="36" height="3" fill="#ffdd00" opacity="0.9"/>'
-    // Bande orange foncé
     + '<rect x="4" y="16" width="36" height="2" fill="#cc4400" opacity="0.7"/>'
-    // Roues avant
     + '<ellipse cx="10" cy="22" rx="4" ry="3" fill="#222"/>'
     + '<ellipse cx="10" cy="22" rx="2" ry="1.5" fill="#555"/>'
-    // Roues arrière
     + '<ellipse cx="34" cy="22" rx="4" ry="3" fill="#222"/>'
     + '<ellipse cx="34" cy="22" rx="2" ry="1.5" fill="#555"/>'
-    // Calandre avant
     + '<rect x="4" y="10" width="3" height="8" rx="1" fill="#cc4400"/>'
-    // Label véhicule
     + '<text x="22" y="13" text-anchor="middle" font-family="Arial" font-weight="bold" font-size="6" fill="#fff" stroke="#000" stroke-width="0.3">' + label + '</text>'
-    // Point GPS (indicateur fix)
     + (fixgps === 0
         ? '<circle cx="38" cy="5" r="3" fill="#999" stroke="#fff" stroke-width="0.8"/>'
         : '<circle cx="38" cy="5" r="3" fill="#00ff44" stroke="#fff" stroke-width="0.8"/>')
     + '</svg>';
-
-  return L.divIcon({
-    html: svg,
-    className: '',
-    iconSize: [w, h],
-    iconAnchor: [w/2, h/2],
-    popupAnchor: [0, -h/2]
-  });
+  return L.divIcon({ html: svg, className: '', iconSize: [w, h], iconAnchor: [w/2, h/2], popupAnchor: [0, -h/2] });
 }
 
-// ── Formater heure depuis TRACKDAY+TRACKTIME ────────────────────────────────
 function myfleetHeure(day, time) {
-  // TRACKDAY: 20260601  TRACKTIME: 172955
   if (!time) return '--:--';
   var t = String(time).padStart(6, '0');
   return t.slice(0,2) + ':' + t.slice(2,4);
 }
 
-// ── Formater date depuis TRACKDAY ───────────────────────────────────────────
 function myfleetDate(day) {
   if (!day) return '';
   var d = String(day);
   return d.slice(6,8) + '/' + d.slice(4,6) + '/' + d.slice(0,4);
 }
 
-// ── Fetch MyFleet24 ─────────────────────────────────────────────────────────
 function fetchMyfleet() {
   fetch(MYFLEET_URL)
     .then(function(r) {
@@ -2835,24 +2879,24 @@ function fetchMyfleet() {
       return r.json();
     })
     .then(function(data) {
-      // L'API retourne soit un tableau soit un objet avec propriété DEVICE/devices
       var devices = [];
-      if (Array.isArray(data))            devices = data;
-      else if (data.DEVICE)               devices = Array.isArray(data.DEVICE) ? data.DEVICE : [data.DEVICE];
-      else if (data.devices)              devices = data.devices;
-      else if (data.LocationAPI && data.LocationAPI.DEVICE) {
-        var d = data.LocationAPI.DEVICE;
+      // Structure réelle : data.RESULT.DEVICE
+      if (data.RESULT && data.RESULT.DEVICE) {
+        var d = data.RESULT.DEVICE;
         devices = Array.isArray(d) ? d : [d];
-      }
-
+      } else if (Array.isArray(data))          { devices = data; }
+      else if (data.DEVICE)                    { devices = Array.isArray(data.DEVICE) ? data.DEVICE : [data.DEVICE]; }
+      else if (data.devices)                   { devices = data.devices; }
       if (devices.length === 0) {
-        console.warn('[MyFleet] Aucun device reçu — structure:', JSON.stringify(data).slice(0,200));
+        console.warn('[MyFleet] Aucun device — structure:', JSON.stringify(data).slice(0,200));
         return;
       }
-
+      // Vérifier le statut API
+      if (data.RESULT && data.RESULT.STATUS !== 'OK') {
+        console.warn('[MyFleet] Statut API:', data.RESULT.STATUS);
+        return;
+      }
       myfleetActif = true;
-
-      // Mettre à jour le badge statut
       var pill = document.querySelector('.status-pill');
       if (pill) {
         pill.style.background = '#2a1a00';
@@ -2860,30 +2904,23 @@ function fetchMyfleet() {
         pill.style.color = '#ff9900';
         pill.innerHTML = '&#x1F6F0; GPS LIVE &mdash; MyFleet24 &mdash; ' + devices.length + ' véhicule(s)';
       }
-
       var labelsVus = {};
-
       devices.forEach(function(dev) {
-        var label   = String(dev.LABEL || dev.label || 'R?');
-        var lat     = parseFloat(dev.TRACKLAT  || dev.tracklat  || 0);
-        var lon     = parseFloat(dev.TRACKLNG  || dev.tracklng  || 0);
-        var speed   = parseFloat(dev.TRACKSPEED || dev.trackspeed || 0);
-        var fixgps  = parseInt(dev.FIXGPS  || dev.fixgps  || 0, 10);
-        var day     = dev.TRACKDAY   || dev.trackday   || '';
-        var time    = dev.TRACKTIME  || dev.tracktime  || '';
-        var imei    = dev.IMEI || dev.imei || '';
-
-        if (!lat || !lon || isNaN(lat) || isNaN(lon)) return; // position invalide
-
+        var label  = String(dev.LABEL  || dev.label  || 'R?');
+        var lat    = parseFloat(dev.TRACKLAT   || dev.tracklat   || 0);
+        var lon    = parseFloat(dev.TRACKLNG   || dev.tracklng   || 0);
+        var speed  = parseFloat(dev.TRACKSPEED || dev.trackspeed || 0);
+        var fixgps = parseInt(dev.FIXGPS  || dev.fixgps  || 0, 10);
+        var day    = dev.TRACKDAY  || dev.trackday  || '';
+        var time   = dev.TRACKTIME || dev.tracktime || '';
+        if (!lat || !lon || isNaN(lat) || isNaN(lon)) return;
         labelsVus[label] = true;
-        var heure = myfleetHeure(day, time);
-        var date  = myfleetDate(day);
-        var statut = speed > 2 ? 'patrouille' : 'attente';
-        var nom   = myfleetLabel(label);
-
-        // Popup
-        var fixTxt  = fixgps === 1 ? '<span style="color:#00ff44;">&#x2714; Fix GPS validé</span>'
-                                   : '<span style="color:#999;">&#x26A0; Position non confirmée</span>';
+        var heure  = myfleetHeure(day, time);
+        var date   = myfleetDate(day);
+        var nom    = myfleetLabel(label);
+        var fixTxt = fixgps === 1
+          ? '<span style="color:#00ff44;">&#x2714; Fix GPS validé</span>'
+          : '<span style="color:#999;">&#x26A0; Position non confirmée</span>';
         var popup =
           '<div class="popup-inner">'
           + '<div class="popup-header">'
@@ -2896,31 +2933,26 @@ function fetchMyfleet() {
           + '<div class="popup-row"><span class="lbl">Dernière pos.</span><span class="val">' + date + ' à ' + heure + '</span></div>'
           + '<div class="popup-row"><span class="lbl">Lat / Lon</span><span class="val" style="font-size:11px;">' + lat.toFixed(5) + 'N &nbsp;' + lon.toFixed(5) + 'E</span></div>'
           + '</div>';
-
         if (myfleetMarkers[label]) {
-          // Mettre à jour marqueur existant
           myfleetMarkers[label].setLatLng([lat, lon]);
           myfleetMarkers[label].setIcon(makeMyfleetIcon(label, fixgps, speed));
           myfleetMarkers[label].getPopup().setContent(popup);
         } else {
-          // Créer nouveau marqueur
           var mkr = L.marker([lat, lon], {
             icon: makeMyfleetIcon(label, fixgps, speed),
             zIndexOffset: 600
           }).bindPopup(popup, { className: 'custom-popup', maxWidth: 280 });
-          map.addLayer(mkr);
+          // Ajouter à la carte seulement en mode DEMO
+          if (modeDemo) map.addLayer(mkr);
           myfleetMarkers[label] = mkr;
         }
       });
-
-      // Retirer les marqueurs de véhicules qui ne sont plus dans la réponse
       Object.keys(myfleetMarkers).forEach(function(lbl) {
         if (!labelsVus[lbl]) {
           map.removeLayer(myfleetMarkers[lbl]);
           delete myfleetMarkers[lbl];
         }
       });
-
       console.log('[MyFleet] ' + devices.length + ' véhicule(s) mis à jour');
     })
     .catch(function(err) {
@@ -2928,24 +2960,8 @@ function fetchMyfleet() {
     });
 }
 
-// Démarrer le polling MyFleet24
 fetchMyfleet();
 setInterval(fetchMyfleet, MYFLEET_INTERVAL);
-
-// Traccar remplacé par MyFleet24
-
-function updateStats() {
-  var actif   = vehicules.filter(function(v){return v.statut==='patrouille';}).length;
-  var attente = vehicules.filter(function(v){return v.statut==='attente';}).length;
-  var hs      = vehicules.filter(function(v){return v.statut==='hs';}).length;
-  document.getElementById('stat-total').textContent  = vehicules.length;
-  document.getElementById('stat-actif').textContent  = actif;
-  document.getElementById('stat-attente').textContent = attente;
-  document.getElementById('stat-hs').textContent     = hs;
-  diffuserStatsVehicules();
-}
-
-// Polling MyFleet24 déjà démarré ci-dessus
 
 // --- BROADCASTCHANNEL — sync avec gestion.html --------------------------------
 // (canal déjà ouvert en tête de script — fonctions de diffusion ci-dessous)
@@ -3026,7 +3042,7 @@ function afficherMarqueursPatrouilles(patrouilles) {
 setInterval(diffuserStatsVehicules, 30000);
 setInterval(function() {
   if (!simulationActive) return;  // Mode exploitation = pas de simulation
-  if (myfleetActif) return;       // MyFleet24 actif = pas de simulation
+  if (myfleetActif) return;        // MyFleet24 actif = pas de simulation
   vehicules.forEach(function(v) {
     if (v.traccarId) return;
     if (v.statut === 'patrouille' && v.vitesse > 0) {
